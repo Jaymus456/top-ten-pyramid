@@ -3,7 +3,7 @@ const MG_LIST = [
   {id:'spot',   name:'Spot the Difference', color:'#b9a6f5', rule:'Two pictures on the TV. Tap the 3 changes on your phone. First to find all 3 wins.'},
   {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. Most correct wins; fastest breaks a tie.'},
   {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins.'},
-  {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'Emoji clues for a song title. Type the song and the artist. First correct wins.'},
+  {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'A 5-second clip of a massive hit plays on the TV. Type the song and the artist. First correct answer wins.'},
   {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember.'},
   {id:'who',    name:'Who Am I?',           color:'#f2a97e', rule:'Clues appear one by one, hardest first. First correct guess wins.'},
   {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins.'}

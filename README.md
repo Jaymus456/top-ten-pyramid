@@ -21,7 +21,7 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
 1. **Theme vote.** At the start, players vote for one of the six themes (🌍 ⚽ 🎵 🏛️ 🧠 🎬), which is used for all **6 rounds**. A tie goes to a **blackjack** showdown between one voter from each side, and the winner picks the theme.
 2. **Rank the pyramid** on your phone, with a fresh list from the theme each round: drag the stones into place, or tap a stone and then its spot. You score a point for every answer in the right spot, plus **3 bonus points for a perfect pyramid**. **Round 6 counts double.**
 3. **Half-time (after round 3):** the wheel picks one of seven mini-games. Each has exactly one winner, who gets 5 points:
-   Spot the Difference · 10-Second Challenge · Finish the Sentence · Guess the Song (emoji clues) · The Memory Test · Who Am I? (clues) · Higher or Lower
+   Spot the Difference · 10-Second Challenge · Finish the Sentence · Guess the Song (a 5-second clip) · The Memory Test · Who Am I? (clues) · Higher or Lower
 4. **Host check:** for answers the game can't judge with certainty (10-Second Challenge, Memory Test, and close guesses in Guess the Song and Who Am I), the host reviews them on the TV or their phone and can mark answers right or wrong before the winner is confirmed.
 5. A podium shows the final scores. Players level on points are split by speed: the lower total lock-in time ranks higher. Nothing is saved between games: each game starts from zero.
 
@@ -34,6 +34,10 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
 ## Background music
 
 Tap **🎷 Play the Jazz House** on the main menu (or **Start music** on the host screen) to play the [Jazz House playlist](https://soundcloud.com/delicieuse-musique/sets/jazz-house) through SoundCloud's official embedded player, before a game even starts. It keeps playing when you open the host screen. You tap once (browsers won't start sound on their own). The music then plays quieter while people are ranking or playing a mini-game, and there are pause, next-track and volume controls. To use a different playlist, change `MUSIC_URL` in `src/online.js` and rebuild. Music works on GitHub Pages; the claude.ai version blocks embedded players.
+
+## Guess the Song
+
+The TV plays a 5-second clip from the [Top 100 most-streamed songs playlist](https://soundcloud.com/dj_antidope/sets/top-100-most-streamed-songs-on) on SoundCloud. It plays again at 25 and 50 seconds, and the host can replay it. To land on the hook, the game reads the track's SoundCloud waveform and starts the clip at the first 5-second stretch that reaches the song's loudest level, which is usually the first chorus. When someone wins, the TV plays 10 seconds of the song as the reveal. Song and artist names come from the track titles on SoundCloud, and close answers go to the host check. The clip needs the SoundCloud player, so on claude.ai (or if SoundCloud doesn't load) the mini-game uses emoji clues instead. To use another playlist, change `SONG_URL` in `src/online.js`.
 
 ## Project layout
 

@@ -423,6 +423,12 @@ body.tv .dbl{font-size:20px;padding:8px 20px}
 .mform button{min-height:40px;padding:0 12px}
 #jManage{margin:0 auto 12px;max-width:560px;animation:slideDown .3s ease-out}
 
+/* ---------- Guess the Song clip ---------- */
+.songframe{position:fixed;left:-10000px;top:0;width:320px;height:120px;border:0;opacity:0;pointer-events:none}
+.listen{display:grid;place-items:center;margin:18px auto 6px;width:clamp(130px,18vw,200px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(138,180,248,.28),rgba(138,180,248,.06) 70%);border:2px solid rgba(138,180,248,.5);font-size:clamp(60px,9vw,96px)}
+.listen.on{animation:listen 1.1s ease-in-out infinite}
+@keyframes listen{0%,100%{box-shadow:0 0 0 0 rgba(138,180,248,.5);transform:scale(1)}50%{box-shadow:0 0 0 22px rgba(138,180,248,0);transform:scale(1.05)}}
+
 /* TV mode: bigger everything, controls tucked away */
 body.tv .wrap{max-width:1600px}
 body.tv{font-size:19px}
@@ -2595,7 +2601,7 @@ const MG_LIST = [
   {id:'spot',   name:'Spot the Difference', color:'#b9a6f5', rule:'Two pictures on the TV. Tap the 3 changes on your phone. First to find all 3 wins.'},
   {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. Most correct wins; fastest breaks a tie.'},
   {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins.'},
-  {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'Emoji clues for a song title. Type the song and the artist. First correct wins.'},
+  {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'A 5-second clip of a massive hit plays on the TV. Type the song and the artist. First correct answer wins.'},
   {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember.'},
   {id:'who',    name:'Who Am I?',           color:'#f2a97e', rule:'Clues appear one by one, hardest first. First correct guess wins.'},
   {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins.'}
@@ -2881,6 +2887,7 @@ const hlVal = (cid,i) => statNum(byId(cid).items[i][1]);
 const HL_Q = {area:'area',pop:'population',mtn:'height',river:'length',states:'area',africa:'area',islands:'area',lakes:'area',eu:'area',samerica:'area',small:'area',moons:'diameter',pl:'Premier League goals',plapps:'Premier League appearances',nba:'NBA points',solar:'diameter'};
 
 function leaveOnline(){
+  try{ if (songPl.w){ clearTimeout(songPl.timer); clearTimeout(songPl.t2); songPl.w.pause(); } }catch(e){}
   if (hostTimer) { clearInterval(hostTimer); hostTimer=null; }
   if (playTick) { clearInterval(playTick); playTick=null; }
   if (live){ try{ live.leave() }catch(e){} live=null; }
@@ -2900,7 +2907,7 @@ window.__pyrTest = {
   cheat: () => { if(!G||!G.mg) return null; const m=G.mg;
     if (m.g==='spot') return spotScene(m.seed).diffs;
     if (m.g==='five') return FIVE_PROMPTS[m.q].l.slice(0,3).map(x=>x.split('|')[0]);
-    if (m.g==='song') return [SONGS[m.q].t[0], SONGS[m.q].a[0]];
+    if (m.g==='song') return G.L.mg.song ? [G.L.mg.song.t, G.L.mg.song.a, m.mode] : null;
     if (m.g==='memory') return memItems(m.seed).map(i=>MEMORY_ITEMS[i][1].split('|')[0]);
     if (m.g==='who') return WHO[m.q].a[0];
     if (m.g==='hl' && m.ch) return hlVal(m.c,m.ch[m.s+1])>hlVal(m.c,m.ch[m.s])?'h':'l';
@@ -2912,7 +2919,7 @@ async function startHost(forceNew){
   leaveOnline(); show('host');
   $('hNotice').classList.add('hidden');
   G = newGame(newCode()); // every game starts fresh: no saved scores
-  renderHost(); initMusic(); sfx.unlock();
+  renderHost(); initMusic(); initSongPlayer(); sfx.unlock();
   hostTimer=setInterval(()=>{ if(G){ hostStep(); renderHostDynamic(); } },250);
   const R = await getRoom();
   if (!R){ $('hNotice').textContent=OFFLINE_MSG; $('hNotice').classList.remove('hidden'); return; }
@@ -3033,7 +3040,9 @@ function goHalf(){ G.phase='half'; G.mg=null; G.dl=now()+20000; pub(); }
 function spinWheel(){
   if (!G || G.phase!=='half') return;
   const g = FORCE_MG && MG_LIST.some(m=>m.id===FORCE_MG) ? FORCE_MG : pickR(MG_LIST).id;
-  G.mgId++; G.mg={id:G.mgId, g, st:'spin', turns:5+rint(3)}; G.phase='mg'; G.L.mgAt=now()+5600; G.dl=0; pub();
+  G.mgId++; G.mg={id:G.mgId, g, st:'spin', turns:5+rint(3)};
+  if (g==='song') G.mg.mode = songPl.ready ? 'audio' : 'emoji'; // the clip needs SoundCloud; otherwise emoji clues
+  G.phase='mg'; G.L.mgAt=now()+5600; G.dl=0; pub();
 }
 function goFinal(){ G.phase='final'; G.dl=0; pub(); sfx.fanfare(true); }
 function hostNext(){
@@ -3046,9 +3055,9 @@ function mgWin(name){
   if (!G.mg || G.mg.win || G.mg.st==='done') return;
   G.mg.win=name; G.mg.wav=findP(name)?.av||scoreRow(name)[3];
   scoreRow(name)[1]+=MG_POINTS;
-  G.mg.st='done'; G.dl=0; pub(); sfx.fanfare();
+  G.mg.st='done'; G.dl=0; pub(); sfx.fanfare(); songReveal();
 }
-function mgNoWinner(){ G.mg.win=''; G.mg.st='done'; G.dl=0; pub(); sfx.sad(); }
+function mgNoWinner(){ G.mg.win=''; G.mg.st='done'; G.dl=0; pub(); sfx.sad(); songReveal(); }
 // a wrong guess that might still be right (typo, nickname, partial name): the host decides
 function nearMiss(g, keys){
   const q=normA(g); if (q.length<3) return false;
@@ -3136,6 +3145,7 @@ function runCmd(c){
   if (a==='next' && (ph==='reveal' || (ph==='mg'&&G.mg&&G.mg.st==='done'))) return hostNext();
   if (a==='spin' && ph==='half') return spinWheel();
   if (a==='end' && ph!=='lobby' && ph!=='final') return goFinal();
+  if (a==='replay') return songReplay();
   if (a==='kick' && typeof c.x==='string'){ const x=G.peerList.find(q=>q.peer===c.x); if (x && x.key!==G.ctl) kickPeer(c.x); return; } // the phone host can't remove themselves
   if (a==='ren' && c.x && typeof c.x.p==='string') return renamePeer(c.x.p, String(c.x.n||''));
   if (ph==='mg' && G.mg && G.mg.st==='review'){
@@ -3154,7 +3164,7 @@ function nextLabel(){
 function rvPub(){
   if (!G || G.phase!=='mg' || !G.mg || G.mg.st!=='review' || !G.L.mg) return null;
   const L=G.L.mg, m=G.mg;
-  if (L.rv) return {k:'race', w:L.rv.win||'', ans:m.g==='song'?`${SONGS[m.q].t[0]} by ${SONGS[m.q].a[0]}`:WHO[m.q].n, c:L.rv.cand.map(c=>[c.name, cleanText(c.txt,50)])};
+  if (L.rv) return {k:'race', w:L.rv.win||'', ans:m.g==='song'?songAnswer():WHO[m.q].n, c:L.rv.cand.map(c=>[c.name, cleanText(c.txt,50)])};
   const build=cap=>(L.rev||[]).slice(0,14).map(r=>[r.name, r.items.filter(i=>i.ok).length,
       r.items.map((it,ii)=>[ii, cleanText(it.txt,24), it.ok?1:0, it.a?1:0]).filter(x=>m.g==='five' || !x[3]).slice(0,cap).map(x=>x.slice(0,3))]);
   let p=build(6); if (JSON.stringify(p).length>1500) p=build(3);
@@ -3167,7 +3177,12 @@ function mgStart(){
   if (m.g==='spot'){ m.seed=1+rint(1e9); G.L.mg.diffs=spotScene(m.seed).diffs; G.L.mg.prog={}; m.st='play'; G.dl=t+120000; }
   if (m.g==='five'){ m.q=rint(FIVE_PROMPTS.length); m.st='ready'; G.dl=t+4000; G.L.mg.ans={}; }
   if (m.g==='finish'){ m.q=rint(FINISH_PROMPTS.length); m.st='write'; G.dl=t+90000; }
-  if (m.g==='song'){ m.q=rint(SONGS.length); m.st='play'; G.L.mg.t0=t; G.L.mg.seen={}; G.L.mg.log=[]; G.dl=t+90000; }
+  if (m.g==='song'){ G.L.mg.seen={}; G.L.mg.log=[]; m.fb={};
+    if (m.mode==='audio'){ m.st='load'; G.dl=0;
+      songLoad(meta=>{ if (!G || G.mg!==m || m.st!=='load') return;
+        if (!meta){ m.mode='emoji'; songEmoji(m); pub(); return; } // SoundCloud didn't load the track: fall back to emoji clues
+        G.L.mg.song=meta; m.need=meta.ak.length?'ta':'t'; m.st='play'; m.plays=1; G.L.mg.next=now()+25000; G.dl=now()+90000; songSnippet(); pub(); });
+    } else songEmoji(m); }
   if (m.g==='memory'){ m.seed=1+rint(1e9); m.st='show'; G.dl=t+12000; G.L.mg.sub={}; }
   if (m.g==='who'){ m.q=rint(WHO.length); m.st='play'; m.k=1; G.L.mg.t0=t; G.L.mg.seen={}; G.L.mg.log=[]; G.dl=t+5*10000+20000; }
   if (m.g==='hl'){ const rnd=Math.random; const c=hlChain(rnd); m.c=c.c; m.ch=c.ch; m.s=0; m.n=0; m.alive=G.players.map(p=>p.name).slice(0,20); m.st='ask'; m.out=[]; G.L.mg.ans={}; G.dl=t+15000;
@@ -3275,13 +3290,17 @@ function mgStep(t, P){
     }
   }
   else if (m.g==='song'){
-    if (m.st==='review') return;
-    const s=SONGS[m.q], tk=s.t.map(normA), ak=s.a.map(normA);
+    if (m.st==='load' || m.st==='review') return;
+    if (m.mode==='audio' && m.plays<3 && t>L.next){ m.plays++; L.next=t+25000; songSnippet(); pub(); } // the clip plays again at 25s and 50s
+    const S=L.song, tk=S.tk, ak=S.ak; let ch=false;
     for (const p of P){ const x=mgOf(p); if(!x || !x.n || x.n===L.seen[p.key]) continue; L.seen[p.key]=x.n;
-      const gt=cleanText(x.t,60), ga=cleanText(x.a,60), okT=fuzzyHit(gt,tk), okA=fuzzyHit(ga,ak);
-      L.log.push({name:p.name,txt:`${gt} by ${ga}`,t,near:(okT||nearMiss(gt,tk))&&(okA||nearMiss(ga,ak))});
+      const gt=cleanText(x.t,60), ga=cleanText(x.a,60), okT=fuzzyHit(gt,tk), okA=m.need==='t' || fuzzyHit(ga,ak);
+      m.fb[p.key]=[x.n, okT&&okA?'ok':okT?'t':okA?'a':'x']; ch=true;
+      // the clip's artist name can be messy, so a right title with a doubtful artist goes to the host check
+      L.log.push({name:p.name,txt:ga?`${gt} by ${ga}`:gt,t,near: m.mode==='audio' ? (okT||nearMiss(gt,tk)) : (okT||nearMiss(gt,tk))&&(okA||nearMiss(ga,ak))});
       if (okT && okA) return finishRace(p.name,t); }
     if (t>G.dl) return finishRace(null,Infinity);
+    if (ch) pub();
   }
   else if (m.g==='memory'){
     if (m.st==='show'){ if (t>G.dl){ m.st='type'; G.dl=t+60000; pub(); } return; }
@@ -3451,7 +3470,7 @@ function winnerBanner(m){
 function renderMgTV(m, lb){
   const info=MG_LIST.find(x=>x.id===m.g);
   if (m.st==='spin') return tvHead('Spinning…', 'Which mini-game will it be?') + wheelSVG();
-  if (m.st==='intro') return `<div class="intro" style="--c:${info.color}"><div class="lbl">Half-time mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(info.rule)}</p><div class="timer" id="xTimer"></div></div>`;
+  if (m.st==='intro') return `<div class="intro" style="--c:${info.color}"><div class="lbl">Half-time mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p><div class="timer" id="xTimer"></div></div>`;
   let h=tvHead(esc(info.name), '');
   if (m.st==='review') return h + reviewHTML(m);
   if (m.g==='spot'){
@@ -3472,10 +3491,15 @@ function renderMgTV(m, lb){
     else h += `<ol class="entries">${(m.a||[]).map((s,i)=>`<li class="${m.st==='done'&&m.wi===i?'win':''}"><span>${esc(s)}</span>${m.st==='done'&&m.vc?`<b>${m.vc[i]} vote${m.vc[i]===1?'':'s'}</b>`:''}</li>`).join('')}</ol>${m.st==='vote'?'<p class="hint">Vote for the funniest on your phone (not your own).</p>':''}`;
   }
   if (m.g==='song'){
-    const s=SONGS[m.q];
-    h += `<div class="emoji">${esc(s.e)}</div>`;
-    if (m.st==='done') h += `<p class="hint big2">It was <b>${esc(s.t[0].replace(/\b\w/g,c=>c.toUpperCase()))}</b> by ${esc(s.a[0].replace(/\b\w/g,c=>c.toUpperCase()))}</p>`;
-    else h += `<p class="hint">Type the song and the artist on your phone.</p>`;
+    if (m.mode==='audio'){
+      h += `<div class="listen${m.st==='play'?' on':''}"><span aria-hidden="true">🎧</span></div>`;
+      if (m.st==='load') h += `<p class="hint big2">Cueing up the clip…</p>`;
+      else if (m.st==='play') h += `<p class="hint big2">Listen! Type the song${m.need==='t'?'':' and the artist'} on your phone.</p><p class="hint">Clip played ${m.plays} time${m.plays===1?'':'s'}${m.plays<3?' · it plays again soon':''}</p><div class="bar"><button class="ghost" type="button" data-replay="1">▶ Play the clip again</button></div>`;
+    } else {
+      h += `<div class="emoji">${esc(SONGS[m.q].e)}</div>`;
+      if (m.st!=='done') h += `<p class="hint">Type the song and the artist on your phone.</p>`;
+    }
+    if (m.st==='done') h += `<p class="hint big2">It was <b>${esc(songAnswer())}</b></p>`;
   }
   if (m.g==='memory'){
     const items=memItems(m.seed);
@@ -3500,7 +3524,7 @@ function reviewHTML(m){
   if (L.rv){
     const w=L.rv.win;
     return `<div class="review"><h3>Host check: close calls</h3><p class="sub">${w?`<b>${esc(w)}</b> got it first by the book.`:'Nobody got it by the book.'} These earlier guesses were close. Accept one if it's right; the earliest player you accept wins.</p>
-      <p class="hint big2">Answer: <b>${esc(m.g==='song'?`${SONGS[m.q].t[0]} by ${SONGS[m.q].a[0]}`:WHO[m.q].n)}</b></p>
+      <p class="hint big2">Answer: <b>${esc(m.g==='song'?songAnswer():WHO[m.q].n)}</b></p>
       <ul class="rvlist">${L.rv.cand.map((c,i)=>`<li><span class="n">${avatarSVG(findP(c.name)?.av||AVATARS[0].id)}<b>${esc(c.name)}</b></span><q>${esc(c.txt)}</q><button class="ghost" type="button" data-rva="${i}">Accept</button></li>`).join('')}</ul>
       <div class="bar"><button class="go" type="button" data-rvok="1">${w?`Keep ${esc(w)} as winner`:'No winner'}</button></div></div>`;
   }
@@ -3601,6 +3625,102 @@ const sfx=(()=>{
 document.addEventListener('pointerdown',()=>{ if (G) sfx.unlock(); },{passive:true}); // browsers only allow sound after a tap
 $('hSfx').addEventListener('click',()=>{ sfx.on=!sfx.on; $('hSfx').setAttribute('aria-pressed',sfx.on); $('hSfx').textContent = sfx.on ? '🔊 Sound effects on' : '🔇 Sound effects off'; if (sfx.on){ sfx.unlock(); sfx.chime(); } });
 
+
+/* ---------- SoundCloud's widget API, loaded once for the music and for Guess the Song ---------- */
+let scState=0; const scQ=[];
+function loadSC(ok, fail){
+  if (scState===2) return ok(); if (scState===3) return fail&&fail();
+  scQ.push([ok,fail]); if (scState===1) return; scState=1;
+  const s=document.createElement('script'); s.src='https://w.soundcloud.com/player/api.js';
+  s.onload=()=>{ scState=2; scQ.splice(0).forEach(([o])=>o()); };
+  s.onerror=()=>{ scState=3; scQ.splice(0).forEach(([,f])=>f&&f()); };
+  document.head.appendChild(s);
+}
+
+/* ---------- Guess the Song: a 5-second clip of the hook, played on the TV ---------- */
+const SONG_URL='https://soundcloud.com/dj_antidope/sets/top-100-most-streamed-songs-on';
+const songPl={init:false, w:null, ready:false, n:0, used:[], want:null, start:0, timer:null, meta:null};
+function initSongPlayer(){
+  if (IN_CLAUDE || songPl.init) return; songPl.init=true;
+  const f=document.createElement('iframe'); f.id='scSong'; f.className='songframe'; f.title='Guess the Song player'; f.allow='autoplay'; f.setAttribute('aria-hidden','true'); f.tabIndex=-1;
+  f.src=`https://w.soundcloud.com/player/?url=${encodeURIComponent(SONG_URL)}&auto_play=false&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`;
+  document.body.appendChild(f);
+  loadSC(()=>{ try{
+    const w=songPl.w=SC.Widget(f), E=SC.Widget.Events;
+    w.bind(E.READY,()=>{ w.getSounds(l=>{ songPl.n=(l||[]).length; songPl.ready=songPl.n>0; }); });
+    w.bind(E.PLAY,songOnPlay);
+    w.bind(E.ERROR,()=>{ if (songPl.want) songPl.want.fail(); });
+  }catch(e){} });
+}
+// pick an unused track, let it start (muted), then read its details and find the hook
+function songLoad(cb){
+  const w=songPl.w; if (!w || !songPl.ready) return cb(null);
+  let pool=[...Array(songPl.n).keys()].filter(i=>!songPl.used.includes(i));
+  if (!pool.length){ songPl.used=[]; pool=[...Array(songPl.n).keys()]; }
+  const i=pickR(pool); songPl.used.push(i);
+  const q=songPl.want={done:false, cb, fail(){ if (!q.done){ q.done=true; songPl.want=null; try{ w.pause(); }catch(e){} cb(null); } }};
+  setTimeout(()=>q.fail(), 10000);
+  w.setVolume(0); w.skip(i);
+}
+function songOnPlay(){
+  const q=songPl.want; if (!q || q.done || q.busy) return; q.busy=true;
+  const w=songPl.w; w.pause();
+  w.getCurrentSound(async snd=>{
+    const meta=snd && songMeta(snd); if (!meta) return q.fail();
+    const start=await hookStart(snd); if (q.done) return;
+    q.done=true; songPl.want=null; songPl.start=start; songPl.meta=meta; q.cb(meta);
+  });
+}
+// the hook: the first 5-second stretch that reaches the song's loudest level (usually the first chorus), from SoundCloud's waveform
+async function hookStart(snd){
+  const dur=+snd.duration||0;
+  if (snd.policy==='SNIP' || dur<=35000) return 0; // a short preview is already the highlight
+  let start=Math.min(dur*0.3, 60000);
+  try{
+    if (snd.waveform_url){
+      const r=await fetch(snd.waveform_url.replace(/\.png(\?.*)?$/,'.json')), j=await r.json(), v=j&&j.samples;
+      if (Array.isArray(v) && v.length>60){
+        const N=v.length, per=dur/N, win=Math.max(1,Math.round(5000/per)), lo=Math.floor(N*.1), hi=Math.floor(N*.8)-win;
+        const pre=[0]; for (const x of v) pre.push(pre[pre.length-1]+(+x||0));
+        const avg=k=>(pre[k+win]-pre[k])/win; let M=0;
+        for (let k=lo;k<=hi;k++) M=Math.max(M,avg(k));
+        for (let k=lo;k<=hi;k++) if (avg(k)>=.93*M){ start=k*per; break; }
+      }
+    }
+  }catch(e){}
+  return Math.max(0, Math.round(start-400)); // a beat early, so the line starts cleanly
+}
+// "Artist - Title (Official Video) [feat. X]" -> answer keys
+function songMeta(snd){
+  let title=String(snd.title||'').trim(), artist=String((snd.publisher_metadata&&snd.publisher_metadata.artist)||'').trim();
+  const dash=title.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+  if (dash && (!artist || normA(dash[1])===normA(artist) || normA(artist).includes(normA(dash[1])))) { if (!artist) artist=dash[1]; title=dash[2]; }
+  const user=String((snd.user&&snd.user.username)||'');
+  if (!artist && user && !/antidope|records|music|official|vevo|topic|label|playlist/i.test(user)) artist=user;
+  const feat=(title.match(/\b(?:ft|feat|featuring)\.?\s+([^()\[\]]+)/i)||[])[1]||'';
+  const clean=title.replace(/\s*[(\[][^)\]]*[)\]]/g,'').replace(/\s+\b(ft|feat|featuring)\b\.?\s.*$/i,'').replace(/\s+[-–]\s+.*$/,'').trim();
+  if (!clean) return null;
+  const parts=(artist+(feat?', '+feat:'')).split(/\s*(?:,|&|\s+x\s+|\s+and\s+|\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b)\s*/i).map(x=>x.trim()).filter(x=>x.length>1);
+  const uniq=a=>[...new Set(a.filter(Boolean))];
+  return {t:clean, a:artist.replace(/\s*[(\[][^)\]]*[)\]]/g,'').trim(), tk:uniq([normA(clean), normA(title)]), ak:uniq([normA(artist), ...parts.map(normA)])};
+}
+function songSnippet(len=5000){
+  const w=songPl.w; if (!w) return;
+  clearTimeout(songPl.timer); clearTimeout(songPl.t2);
+  w.setVolume(0); w.seekTo(songPl.start); w.play();
+  songPl.t2=setTimeout(()=>{ w.seekTo(songPl.start); w.setVolume(100); songPl.timer=setTimeout(()=>{ try{ w.pause(); }catch(e){} }, len); }, 350);
+}
+function songReplay(){ const m=G&&G.mg; if (!m || G.phase!=='mg' || m.g!=='song' || m.mode!=='audio' || m.st!=='play' || m.plays>=6) return; m.plays++; G.L.mg.next=now()+25000; songSnippet(); pub(); }
+function songReveal(){ const m=G&&G.mg; if (m && m.g==='song' && m.mode==='audio' && G.L.mg && G.L.mg.song) setTimeout(()=>songSnippet(10000), 1200); }
+function songEmoji(m){ const t=now(); m.q=rint(SONGS.length); const s=SONGS[m.q], cap=x=>x.replace(/\b\w/g,c=>c.toUpperCase());
+  G.L.mg.song={t:cap(s.t[0]), a:cap(s.a[0]), tk:s.t.map(normA), ak:s.a.map(normA)}; m.need='ta'; m.st='play'; G.L.mg.t0=t; G.dl=t+90000; }
+const songAnswer = () => { const S=G&&G.L.mg&&G.L.mg.song; return S ? (S.a ? `${S.t} by ${S.a}` : S.t) : ''; };
+function mgRule(m){
+  if (m && m.g==='song') return m.mode==='audio' ? 'A 5-second clip of a massive hit plays on the TV. Type the song and the artist. First correct answer wins.' : 'Emoji clues for a song title. Type the song and the artist. First correct answer wins.';
+  return (MG_LIST.find(x=>x.id===(m&&m.g))||{}).rule||'';
+}
+$('hX').addEventListener('click',e=>{ if (e.target.closest('[data-replay]')) songReplay(); });
+
 /* ---------- background music (host/TV only): SoundCloud's official embedded player ---------- */
 const MUSIC_URL='https://soundcloud.com/delicieuse-musique/sets/jazz-house';
 let music={init:false, w:null, ready:false, started:false, playing:false, base:60, n:0};
@@ -3613,16 +3733,14 @@ function initMusic(){
     <label>Volume <input type="range" id="mVol" min="0" max="100" value="${music.base}" aria-label="Music volume"></label>
     <span class="now" id="mNow">Jazz House playlist</span>
     <iframe id="scw" title="SoundCloud player" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(MUSIC_URL)}&auto_play=false&show_artwork=false&visual=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&color=%23b9a6f5"></iframe>`;
-  const s=document.createElement('script'); s.src='https://w.soundcloud.com/player/api.js';
-  s.onload=()=>{ try{
+  loadSC(()=>{ try{
       const w=music.w=SC.Widget($('scw')), E=SC.Widget.Events;
       w.bind(E.READY,()=>{ music.ready=true; w.getSounds(list=>{ music.n=(list||[]).length; if (music.want){ music.want=false; musicPlay(); } }); applyVol(); });
       w.bind(E.PLAY,()=>{ music.playing=true; music.started=true; $('mPlay').textContent='Pause'; bar.classList.remove('paused'); applyVol(); musicVis(); musicMenuLabel();
         w.getCurrentSound(snd=>{ if(snd) $('mNow').innerHTML=`Now playing: <b>${esc(snd.title||'')}</b>`; }); });
       w.bind(E.PAUSE,()=>{ music.playing=false; $('mPlay').textContent='Play'; bar.classList.add('paused'); musicMenuLabel(); });
       w.bind(E.ERROR,()=>{ $('mNow').textContent='SoundCloud could not play this track. Try Next track.'; });
-    }catch(e){ musicFail(); } };
-  s.onerror=musicFail; document.head.appendChild(s);
+    }catch(e){ musicFail(); } }, musicFail);
   $('mPlay').addEventListener('click',()=>{
     if(!music.w||!music.ready){ music.want=true; $('mNow').textContent='Loading the player…'; return; }
     if (!music.started) musicPlay(); else music.w.toggle();
@@ -3645,7 +3763,8 @@ $('mMenu').addEventListener('click',()=>{
 function musicFail(){ const n=$('mNow'); if(n) n.textContent='Could not load the SoundCloud player. Check the internet connection.'; }
 // quieter while people are concentrating: ranking and live mini-games
 function musicDuck(){ if(!G) return false; if (G.phase==='play'||G.phase==='tb') return true; if (G.phase==='mg'&&G.mg) return !['spin','intro','done','review'].includes(G.mg.st); return false; }
-function applyVol(){ if(music.w&&music.ready) music.w.setVolume(Math.round(music.base*(musicDuck()?0.3:1))); }
+const songLive = () => !!(G && G.phase==='mg' && G.mg && G.mg.g==='song' && G.mg.mode==='audio' && ['load','play','review','done'].includes(G.mg.st));
+function applyVol(){ if(music.w&&music.ready) music.w.setVolume(songLive() ? 0 : Math.round(music.base*(musicDuck()?0.3:1))); }
 
 /* =================== PLAYER =================== */
 let me=null, playTick=null;
@@ -3790,7 +3909,7 @@ function buildX(h){
     const info=MG_LIST.find(x=>x.id===m.g);
     if (!me.mgP || me.mgP.id!==m.id) me.mgP={id:m.id};
     if (m.st==='spin') s=`<div class="wait"><div class="big">Spinning…</div><p>Watch the wheel on the TV.</p></div>`;
-    else if (m.st==='intro') s=`<div class="intro" style="--c:${info.color}"><div class="lbl">Mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(info.rule)}</p></div>`;
+    else if (m.st==='intro') s=`<div class="intro" style="--c:${info.color}"><div class="lbl">Mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p></div>`;
     else if (m.st==='done') s='<div id="pxDyn"></div>';
     else if (m.st==='review') s = isCtl() ? head('Host check','You decide the close calls. Everyone sees the result on the TV.')+'<div id="pxDyn"></div>' : `<div class="wait"><div class="big">Checking answers…</div><p>${h.ctl?esc(h.ctl)+' (the host)':'The host'} is checking the close calls. Watch the TV.</p></div>`;
     else s=head(esc(info.name),'')+mgPhoneBuild(m)+'<div id="pxDyn"></div>';
@@ -3807,7 +3926,9 @@ function mgPhoneBuild(m){
     if (m.st==='write') return `<div class="bigq sm">${esc(q)}</div><textarea id="finT" maxlength="80" rows="3" placeholder="Your ending (anonymous)"></textarea><div class="bar"><button class="go" type="button" data-act="finSend">Send it</button></div>`;
     return `<div class="bigq sm">${esc(q)}</div><p class="hint">Vote for the funniest (not your own).</p>`;
   }
-  if (m.g==='song') return `<p class="hint">Look at the emoji clues on the TV.</p><label class="f">Song<input id="sgT" maxlength="60" autocomplete="off"></label><label class="f" style="margin-top:8px">Artist<input id="sgA" maxlength="60" autocomplete="off"></label><div class="bar"><button class="go" type="button" data-act="sgGo">Guess</button></div>`;
+  if (m.g==='song'){
+    if (m.st==='load') return `<div class="wait"><div class="big">🎧 Get ready…</div><p>A clip is about to play on the TV.</p></div>`;
+    return `<p class="hint">${m.mode==='audio'?'🎧 Listen to the clip on the TV. It plays a few times.':'Look at the emoji clues on the TV.'}</p><label class="f">Song<input id="sgT" maxlength="60" autocomplete="off"></label><label class="f" style="margin-top:8px">Artist${m.need==='t'?' (optional)':''}<input id="sgA" maxlength="60" autocomplete="off"></label><div class="bar"><button class="go" type="button" data-act="sgGo">Guess</button></div>`; }
   if (m.g==='memory'){
     if (m.st==='show') return `<div class="wait"><div class="big">Look at the TV!</div><p>Memorise all 15 objects. You'll type them in a moment.</p></div>`;
     return `<div class="row" style="justify-content:center"><input id="memI" maxlength="30" autocomplete="off" placeholder="An object you saw" style="flex:1 1 200px"><button class="go" type="button" data-act="memAdd">Add</button></div><div class="tags" id="memL"></div><div class="bar"><button class="ghost" type="button" data-act="memDone">I'm done</button></div>`;
@@ -3851,7 +3972,7 @@ function updateX(h){
       if (m.st==='write') d.innerHTML = me.mgP.s ? '<p class="hint big2">Sent! Waiting for everyone else…</p>' : '';
       else { const mine=cleanText(me.mgP.t); d.innerHTML=`<div class="vopts">${(m.a||[]).map((s,i)=>s===mine?`<div class="vopt mine">${esc(s)}<small>Yours</small></div>`:`<button type="button" class="vopt" data-fv="${i}" aria-pressed="${me.mgP.v===i}">${esc(s)}</button>`).join('')}</div>`; }
     }
-    else if (m.g==='song'){ const s=SONGS[m.q]; d.innerHTML=`<p class="hint big2" id="sgMsg">${me.msg||''}</p>`; }
+    else if (m.g==='song'){ const fb=m.fb&&m.fb[meK]; if (fb && fb[0]===me.mgP.n) me.msg=SONG_FB[fb[1]]||me.msg; d.innerHTML=`<p class="hint big2" id="sgMsg">${esc(me.msg||'')}</p>`; }
     else if (m.g==='memory'){ if (m.st==='type'){ $('memL').innerHTML=(me.mgP.w||[]).map(w=>`<span>${esc(w)}</span>`).join(''); d.innerHTML=me.mgP.s?'<p class="hint big2">Locked in! Waiting for the others…</p>':`<p class="hint">${(me.mgP.w||[]).length} added</p>`; const inp=$('memI'); if(inp) inp.disabled=!!me.mgP.s; } }
     else if (m.g==='who'){ d.innerHTML=`<ol class="clues ph">${WHO[m.q].c.slice(0,m.k).map((c,i)=>`<li class="on${i===m.k-1?' new':''}">${esc(c)}</li>`).join('')}</ol><p class="hint big2">${me.msg||''}</p>`; }
     else if (m.g==='hl'){
@@ -3899,15 +4020,16 @@ $('jX').addEventListener('keydown',e=>{
   if (e.target.id==='sgT'){ e.preventDefault(); $('sgA').focus(); }
   if (e.target.id==='sgA'){ e.preventDefault(); songGuess(); }
 });
+// the TV checks song guesses (the answer never reaches the phones) and sends back a verdict
 function songGuess(){
-  const m=me.host.mg; if(!m||m.g!=='song'||me.lock>now()) return;
-  const t=cleanText($('sgT').value,60), a=cleanText($('sgA').value,60); if(!t||!a){ me.msg='Fill in both the song and the artist.'; updateX(me.host); return; }
-  const s=SONGS[m.q], okT=fuzzyHit(t,s.t.map(normA)), okA=fuzzyHit(a,s.a.map(normA));
+  const m=me.host.mg; if(!m||m.g!=='song'||m.st!=='play'||me.lock>now()) return;
+  const t=cleanText($('sgT').value,60), a=cleanText($('sgA').value,60);
+  if (!t || (!a && m.need!=='t')){ me.msg = m.need==='t' ? 'Type the song title.' : 'Fill in both the song and the artist.'; updateX(me.host); return; }
   me.mgP.t=t; me.mgP.a=a; me.mgP.n=(me.mgP.n||0)+1; sendMg();
-  me.msg = okT&&okA ? 'Got it! Checking…' : okT ? 'Right song, wrong artist!' : okA ? 'Right artist, wrong song!' : 'Not quite. Try again.';
-  if (!(okT&&okA)) me.lock=now()+1200;
+  me.msg='Checking…'; me.lock=now()+1200;
   updateX(me.host);
 }
+const SONG_FB={ok:'Got it! Checking…', t:'Right song, wrong artist!', a:'Right artist, wrong song!', x:'Not quite. Try again.'};
 function whoGuess(){
   const m=me.host.mg; if(!m||m.g!=='who'||me.lock>now()) return;
   const g=cleanText($('whoG').value,60); if(!g) return;
@@ -3943,6 +4065,7 @@ function renderCtl(h){
   else if (ph==='reveal' && h.nx) b=B('next',`Next: ${esc(h.nx)}`);
   else if (ph==='half') b=B('spin','Spin the wheel');
   else if (ph==='mg' && m && m.st==='done' && h.nx) b=B('next',`Next: ${esc(h.nx)}`);
+  else if (ph==='mg' && m && m.g==='song' && m.mode==='audio' && m.st==='play') b=B('replay','▶ Replay the clip','ghost');
   if (ph!=='lobby' && ph!=='final') b+=B('end', me.endArm>now()?'Tap again to end':'End game', 'ghost danger');
   if (Array.isArray(h.pl)) b+=`<button type="button" class="ghost" data-mtoggle="1" aria-expanded="${me.mOpen}">👥 Players</button>`;
   const html=`<div class="ctlhead"><span class="ctlbadge">🎮 Host</span><span>You're running the game</span></div><div class="ctlbtns">${b}</div>`;
