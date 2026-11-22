@@ -99,3 +99,17 @@ body.tv .entries li,body.tv .clues li{font-size:24px}
 .rvchip{min-height:40px;padding:0 12px;border-radius:99px;background:rgba(242,169,126,.16);border:1px solid rgba(242,169,126,.5);color:var(--coral);font-weight:600}
 .rvchip.ok{background:rgba(166,217,160,.16);border-color:rgba(166,217,160,.6);color:var(--ok)}
 .rvn{font:800 22px/1 "Inter Tight",Inter,sans-serif;color:var(--acc);min-width:1.5em;text-align:right}
+
+.music{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:center;margin:16px auto 0;max-width:900px;padding:10px 14px;border-radius:14px;background:rgba(21,25,35,.82);border:1px solid rgba(255,255,255,.06)}
+.music button{min-height:40px;padding:0 14px}
+.music label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.music input[type=range]{accent-color:var(--acc);width:120px;min-height:0;padding:0;border:0;background:none}
+.music .now{color:var(--muted);font-size:14px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music .now b{color:var(--ink);font-weight:600}
+.music iframe{width:min(420px,100%);height:20px;border:0;border-radius:4px;opacity:.9}
+.music .eq{display:inline-flex;gap:2px;align-items:flex-end;height:14px}
+.music .eq i{width:3px;background:var(--acc);border-radius:2px;animation:eq 1s ease-in-out infinite}
+.music .eq i:nth-child(2){animation-delay:.2s}.music .eq i:nth-child(3){animation-delay:.4s}
+.music.paused .eq i{animation:none;height:3px}
+@keyframes eq{0%,100%{height:3px}50%{height:14px}}
+@media(prefers-reduced-motion:reduce){.music .eq i{animation:none;height:8px}}

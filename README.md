@@ -24,6 +24,10 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
 4. **Host check:** for answers the game can't judge with certainty (5-Second Challenge, Memory Test, and close guesses in Guess the Song and Who Am I), the host reviews them on the TV and can mark answers right or wrong before the winner is confirmed.
 5. A podium shows the final scores.
 
+## Background music
+
+The host screen plays the [Jazz House playlist](https://soundcloud.com/delicieuse-musique/sets/jazz-house) through SoundCloud's official embedded player. The host taps **Start music** once (browsers won't start sound on their own). The music then plays quieter while people are ranking or playing a mini-game, and there are pause, next-track and volume controls. To use a different playlist, change `MUSIC_URL` in `src/online.js` and rebuild. Music works on GitHub Pages; the claude.ai version blocks embedded players.
+
 ## Project layout
 
 - `index.html`: the whole game in one self-contained file. Open it or host it anywhere.

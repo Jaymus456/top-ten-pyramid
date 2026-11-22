@@ -134,7 +134,7 @@ async function startHost(forceNew){
   $('hNotice').classList.add('hidden');
   let saved=null; try{ saved=JSON.parse(store('pyr-host')||'null') }catch(e){}
   G = (!forceNew && saved && now()-saved.at<6*3600e3 && saved.s && saved.s.code) ? Object.assign(newGame(saved.s.code), {scores:saved.s.scores||[], round:saved.s.round||0, used:saved.s.used||[], phase: saved.s.round? 'lobby':'lobby', resumed:!!saved.s.round}) : newGame(newCode());
-  renderHost();
+  renderHost(); initMusic();
   hostTimer=setInterval(()=>{ if(G){ hostStep(); renderHostDynamic(); } },250);
   const R = await getRoom();
   if (!R){ $('hNotice').textContent=OFFLINE_MSG; $('hNotice').classList.remove('hidden'); return; }
@@ -496,6 +496,7 @@ function renderHost(){
   if (rank) renderRankStage(lb);
   if (x) renderX(lb);
   renderHostDynamic();
+  applyVol();
 }
 function renderRankStage(lb){
   const c=byId(G.cat);
@@ -634,6 +635,42 @@ $('hTv').addEventListener('click',()=>{
   $('hTv').textContent = on ? 'Exit TV mode' : 'TV mode';
   try{ if(on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); else if(!on && document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){}
 });
+
+
+/* ---------- background music (host/TV only): SoundCloud's official embedded player ---------- */
+const MUSIC_URL='https://soundcloud.com/delicieuse-musique/sets/jazz-house';
+let music={init:false, w:null, ready:false, started:false, playing:false, base:60, n:0};
+function initMusic(){
+  if (music.init) return; music.init=true;
+  const bar=$('hMusic');
+  if (IN_CLAUDE){ bar.innerHTML='<span class="now">Background music plays on the GitHub version of the game.</span>'; return; }
+  bar.classList.add('paused');
+  bar.innerHTML=`<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><button class="go" type="button" id="mPlay">Start music</button><button class="ghost" type="button" id="mNext">Next track</button>
+    <label>Volume <input type="range" id="mVol" min="0" max="100" value="${music.base}" aria-label="Music volume"></label>
+    <span class="now" id="mNow">Jazz House playlist</span>
+    <iframe id="scw" title="SoundCloud player" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(MUSIC_URL)}&auto_play=false&show_artwork=false&visual=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&color=%23b9a6f5"></iframe>`;
+  const s=document.createElement('script'); s.src='https://w.soundcloud.com/player/api.js';
+  s.onload=()=>{ try{
+      const w=music.w=SC.Widget($('scw')), E=SC.Widget.Events;
+      w.bind(E.READY,()=>{ music.ready=true; w.getSounds(list=>{ music.n=(list||[]).length; }); applyVol(); });
+      w.bind(E.PLAY,()=>{ music.playing=true; music.started=true; $('mPlay').textContent='Pause'; bar.classList.remove('paused'); applyVol();
+        w.getCurrentSound(snd=>{ if(snd) $('mNow').innerHTML=`Now playing: <b>${esc(snd.title||'')}</b>`; }); });
+      w.bind(E.PAUSE,()=>{ music.playing=false; $('mPlay').textContent='Play'; bar.classList.add('paused'); });
+      w.bind(E.ERROR,()=>{ $('mNow').textContent='SoundCloud could not play this track. Try Next track.'; });
+    }catch(e){ musicFail(); } };
+  s.onerror=musicFail; document.head.appendChild(s);
+  $('mPlay').addEventListener('click',()=>{
+    const w=music.w; if(!w||!music.ready){ $('mNow').textContent='Loading the player… tap again in a moment.'; return; }
+    if (!music.started && music.n>1) w.skip(rint(music.n)); // start somewhere random in the playlist
+    else w.toggle();
+  });
+  $('mNext').addEventListener('click',()=>{ if(music.w&&music.ready) music.w.next(); });
+  $('mVol').addEventListener('input',e=>{ music.base=+e.target.value; applyVol(); });
+}
+function musicFail(){ const n=$('mNow'); if(n) n.textContent='Could not load the SoundCloud player. Check the internet connection.'; }
+// quieter while people are concentrating: ranking and live mini-games
+function musicDuck(){ if(!G) return false; if (G.phase==='play'||G.phase==='tb') return true; if (G.phase==='mg'&&G.mg) return !['spin','intro','done','review'].includes(G.mg.st); return false; }
+function applyVol(){ if(music.w&&music.ready) music.w.setVolume(Math.round(music.base*(musicDuck()?0.3:1))); }
 
 /* =================== PLAYER =================== */
 let me=null, playTick=null;
