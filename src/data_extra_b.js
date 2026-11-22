@@ -90,3 +90,15 @@
     {id:'p_quiz', t:'UK TV quiz shows by first episode', n:'In order.', items:[['University Challenge','1962'],['Mastermind','1972'],['Family Fortunes','1980'],['Countdown','1982'],['Blockbusters','1983'],['Who Wants to Be a Millionaire?','1998'],['The Weakest Link','2000'],['The Chase','2009'],['Pointless','2009'],['Tipping Point','2012']]}
   ]);
 }
+/* notes rewritten so they never give an answer away; one emoji per theme */
+{
+  const NOTES={river:'Common reference lengths.',lakes:'Surface area.',eu:'Metropolitan areas only; overseas territories not counted.',
+    plapps:'All-time, as of 2026.',engcaps:'All-time, as of November 2026. Tied players share a rank.',enggoals:'All-time, as of November 2026. Tied players share a rank.',
+    ukpm2:'Earliest first, up to July 2026.',mon:'Earliest first.',universe:'By mass.',crust:'By mass.',el1120:'In order of atomic number.',reigns:'Since 1066.',
+    strictly:'Series 1–10.',s_darts:'The first ten of the twenty.',h_buildings:'By completion date.',h_ancient:'In order.',h_explorers:'In order.',
+    p_nintendo:'In release order.',p_games:'In release order.',p_social:'In order of launch.',p_apple:'In order of launch.',i_geology:'Oldest first.',
+    i_letters:'By how often they appear in English writing.',m_classics:'By release year.',m_hiphop:'By release year.',h_20c:'In order.',h_21c:'In order.',h_space2:'In order.',h_ww2:'In order.'};
+  for (const g of GROUPS) for (const c of g.cats) if (NOTES[c.id]) c.n=NOTES[c.id];
+  const EMO={geo:'🌍',sport:'⚽',music:'🎵',history:'🏛️',impossible:'🧠',pop:'🎬'};
+  for (const g of GROUPS) g.emoji=EMO[g.id]||'⭐';
+}
