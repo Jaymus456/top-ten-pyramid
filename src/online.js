@@ -1,16 +1,27 @@
 /* ---------- ONLINE: shared helpers ---------- */
-let roomNS=null, roomTried=false, live=null;
+let roomNS=null, roomTried=false, live=null, ROOM_KIND='';
+const IN_CLAUDE = !!(window.claude && window.claude.use);
+// claude.ai: its built-in live room. Anywhere else (GitHub Pages etc.): free PeerJS connections.
 async function getRoom(){
   if (roomNS || roomTried) return roomNS;
   roomTried=true;
-  try { roomNS = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch(e){ roomNS=null; }
+  if (IN_CLAUDE){
+    try { roomNS = await window.claude.use('room'); } catch(e){ roomNS=null; }
+    if (roomNS) ROOM_KIND='claude';
+    return roomNS;
+  }
+  if (await loadPeerLib()){ roomNS=makePeerRoom(); ROOM_KIND='peer'; }
   return roomNS;
 }
-const OFFLINE_MSG = 'Online play only works when this page is open on claude.ai, signed in, by people it has been shared with. Solo play works anywhere.';
+const joinRoom = (R, name, host) => ROOM_KIND==='peer' ? R.join(name,{host}) : R.join(name);
+const OFFLINE_MSG = IN_CLAUDE
+  ? 'Online play here needs you signed in to claude.ai with the game shared to you. Solo play works anywhere.'
+  : 'Could not load the free connection service (PeerJS). Check your internet connection and refresh. Solo play still works.';
+const PEER_FAIL = 'Could not reach the free connection service right now. Check your internet and try again in a minute. Solo play still works.';
 const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ';
 const newCode = () => Array.from({length:4},()=>CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]).join('');
 const roomName = code => 'pyr-'+code.toLowerCase();
-const joinUrl = code => ART_URL+'#join-'+code.toLowerCase();
+const joinUrl = code => (IN_CLAUDE ? ART_URL : location.href.split('#')[0])+'#join-'+code.toLowerCase();
 const TOTAL_ROUNDS=6, HALF_AFTER=3, MG_POINTS=5;
 const now = () => Date.now();
 const rint = n => Math.floor(Math.random()*n);
@@ -127,8 +138,14 @@ async function startHost(forceNew){
   hostTimer=setInterval(()=>{ if(G){ hostStep(); renderHostDynamic(); } },250);
   const R = await getRoom();
   if (!R){ $('hNotice').textContent=OFFLINE_MSG; $('hNotice').classList.remove('hidden'); return; }
-  try { live = await R.join(roomName(G.code)); }
-  catch(e){ $('hNotice').textContent='Could not open the game room ('+(e&&e.code||'error')+'). Try New game code.'; $('hNotice').classList.remove('hidden'); return; }
+  for (let attempt=0; attempt<3 && !live; attempt++){
+    try { live = await joinRoom(R, roomName(G.code), true); }
+    catch(e){
+      if (e && e.code==='limit_reached' && ROOM_KIND==='peer'){ G.code=newCode(); qrFor=''; renderHost(); continue; } // code already taken: pick another
+      $('hNotice').textContent = ROOM_KIND==='peer' ? PEER_FAIL : 'Could not open the game room ('+(e&&e.code||'error')+'). Try New game code.';
+      $('hNotice').classList.remove('hidden'); return; }
+  }
+  if (!live || !G) return;
   live.onPeers(ch=>{ if(!G) return;
     const map=new Map();
     for (const p of ch.peers){ const pr=p.presence;
@@ -635,7 +652,7 @@ $('jForm').addEventListener('submit',async e=>{
   store('pyr-name',name); $('jErr').textContent='Connecting…';
   const R=await getRoom();
   if (!R){ $('jErr').textContent=''; $('jNotice').textContent=OFFLINE_MSG; $('jNotice').classList.remove('hidden'); return; }
-  try { live=await R.join(roomName(code)); } catch(err){ $('jErr').textContent='Could not join that game. Check the code and try again.'; return; }
+  try { live=await joinRoom(R, roomName(code), false); } catch(err){ $('jErr').textContent = ROOM_KIND==='peer' ? PEER_FAIL : 'Could not join that game. Check the code and try again.'; return; }
   me={code,name,host:null,play:null,round:0,seenHost:false,seq:-1,dlLocal:0,key:'',bjN:0,mgP:null,vote:null,pick:null,lock:0};
   $('jErr').textContent=''; $('jForm').classList.add('hidden'); $('jPlay').classList.remove('hidden');
   $('jWho').textContent=name; $('jCodeShow').textContent=code; $('jMeAv').innerHTML=avatarSVG(myAv);

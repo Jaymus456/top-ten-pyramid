@@ -2,12 +2,18 @@
 
 A party quiz game. Every round shows a category and its ten answers, shuffled, and players rank them into a 4-3-2-1 pyramid with number 1 at the top. You get a point for every answer in the right spot.
 
-**Play solo:** https://jaymus456.github.io/top-ten-pyramid/
+**Play:** https://jaymus456.github.io/top-ten-pyramid/ (solo, or host a game night on a TV)
 
 ## Modes
 
 - **Solo:** pick from 60 categories in six themes (Geography, Sport, Music, History, Impossible, Film/TV & pop culture) and rank them. Works in any browser, including the GitHub Pages link above.
-- **Game night (online):** one screen hosts on the TV and players join on their phones with a 4-letter code or a QR code. Each player picks a character and a nickname. Online play only works on the claude.ai version, because it uses claude.ai's live connection between devices. When the page is opened anywhere else it shows a message and solo still works.
+- **Game night (online):** one screen hosts on the TV and players join on their phones with a 4-letter code or a QR code. Each player picks a character and a nickname. No accounts are needed.
+
+### How online play connects
+
+- **On GitHub Pages (or any website):** phones connect straight to the host's browser with WebRTC, using the free public [PeerJS](https://peerjs.com) service to find each other. The host's browser runs the game, so **keep the host tab open and the screen awake** for the whole game.
+- **On claude.ai:** it uses claude.ai's built-in live connection instead.
+- **If a phone can't join:** some strict networks (certain office or university Wi-Fi, some mobile data) block direct connections. Switching that phone to the same Wi-Fi as the TV usually fixes it.
 
 ### How a game night runs
 
@@ -26,6 +32,7 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
   - `data.js`: the 60 categories
   - `minigames.js`: content for the mini-games
   - `online.js`: host/player game logic
+  - `peerroom.js`: PeerJS connection used outside claude.ai
   - `avatars.js` / `avatars.css`: the characters
   - `game.css`: game-night screens
   - `qrlib.js`: QR encoder
