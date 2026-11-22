@@ -174,6 +174,11 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
 
   <!-- HOME -->
   <section id="vHome">
+    <button class="dailydoor" type="button" data-go="daily">
+      <span class="dcal" aria-hidden="true">📅</span>
+      <span class="dtxt"><b>Daily Pyramid <em id="dailyNum"></em></b><span>Six new lists today, one from each theme. The same lists for everyone, so you can compare scores.</span></span>
+      <span class="dgo" aria-hidden="true">Play →</span>
+    </button>
     <div class="doors">
       <button class="door" type="button" data-go="solo">
         <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="19" y="2" width="16" height="10" rx="2" fill="#e9eaf0"/><rect x="10" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="28" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="1" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="19" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="37" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/></svg>
@@ -189,6 +194,27 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
       </button>
     </div>
     <div class="menurow"><button class="ghost musicbtn" type="button" id="mMenu"><span aria-hidden="true">🎷</span> Play the Jazz House</button><span class="sub">Background music for game night, from SoundCloud.</span></div>
+  </section>
+
+  <!-- DAILY -->
+  <section id="vDaily" class="hidden">
+    <div class="dhead" id="dHead"></div>
+    <div id="dPlay">
+      <div id="dBoard"></div>
+      <div class="bar">
+        <button class="go" type="button" id="dCheck" disabled>Check my pyramid</button>
+        <button class="ghost" type="button" id="dClear">Clear</button>
+      </div>
+      <div class="banner hidden" id="dResult"><div class="big" id="dScore"></div><p id="dMsg"></p><div class="bar"><button class="go" type="button" id="dNext">Next</button></div></div>
+    </div>
+    <div id="dSum" class="hidden">
+      <div class="banner"><div class="lbl">Today's score</div><div class="big" id="dTotal"></div><p id="dVerdict"></p>
+        <ol class="drows" id="dRows"></ol>
+        <div class="bar"><button class="go" type="button" id="dShare">Share my score</button></div>
+        <pre class="dshare hidden" id="dShareTxt"></pre>
+        <p class="sub" id="dNextIn"></p>
+      </div>
+    </div>
   </section>
 
   <!-- SOLO -->
@@ -294,6 +320,7 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
 /*DATA*/
 /*DATAX*/
 /*DATAXB*/
+/*DATAR*/
 /*AVATARS*/
 const ART_URL = 'https://claude.ai/artifact/VBgkotb1UX47rB9Yz9ZrPe';
 const CATS = GROUPS.flatMap(g=>g.cats.map(c=>Object.assign(c,{group:g.id})));
@@ -461,13 +488,14 @@ const randomCat = (not) => { let c; do{c=CATS[Math.floor(Math.random()*CATS.leng
 let view='home';
 function show(v){
   view=v;
-  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin']]){ $(id).classList.toggle('hidden',k!==v); if (k===v) enterAnim($(id)); }
+  if (v!=='daily' && location.hash==='#daily') history.replaceState(null,'',location.pathname+location.search);
+  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin'],['daily','vDaily']]){ $(id).classList.toggle('hidden',k!==v); if (k===v) enterAnim($(id)); }
   $('homeBtn').classList.toggle('hidden',v==='home');
   if (typeof musicVis==='function') { musicVis(); applyVol(); }
   $('tagline').textContent = v==='host' ? 'Host screen: put this on the TV.' : v==='join' ? 'Game night on your phone.' : 'Every answer is shown. Can you put them in the right order?';
 }
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
-  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin('');
+  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin(''); if(g==='daily') startDaily();
 }));
 $('homeBtn').addEventListener('click',()=>{ leaveOnline(); document.body.classList.remove('tv'); try{ if(document.fullscreenElement) document.exitFullscreen() }catch(e){} show('home'); try{history.replaceState(null,'',location.pathname+location.search)}catch(e){} });
 
@@ -499,6 +527,7 @@ $('sAgain').addEventListener('click',()=>startSolo(soloCat));
 $('sNext').addEventListener('click',()=>{ const g=GROUPS.find(x=>x.id===byId(soloCat).group); const i=g.cats.findIndex(c=>c.id===soloCat); startSolo(g.cats[(i+1)%g.cats.length].id); });
 $('sRandom').addEventListener('click',()=>startSolo(randomCat(soloCat)));
 
+/*DAILY*/
 /*MINIGAMES*/
 /*PEERROOM*/
 /*ONLINE*/
@@ -506,6 +535,7 @@ $('sRandom').addEventListener('click',()=>startSolo(randomCat(soloCat)));
 function route(){
   const m=/^#join-([a-z]{4})$/i.exec(location.hash||'');
   if (m) { openJoin(m[1]); return true; }
+  if (/^#daily$/i.test(location.hash||'')) { startDaily(); return true; }
   return false;
 }
 window.addEventListener('hashchange',route);

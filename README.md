@@ -35,6 +35,18 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
 
 Tap **🎷 Play the Jazz House** on the main menu (or **Start music** on the host screen) to play the [Jazz House playlist](https://soundcloud.com/delicieuse-musique/sets/jazz-house) through SoundCloud's official embedded player, before a game even starts. It keeps playing when you open the host screen. You tap once (browsers won't start sound on their own). The music then plays quieter while people are ranking or playing a mini-game, and there are pause, next-track and volume controls. To use a different playlist, change `MUSIC_URL` in `src/online.js` and rebuild. Music works on GitHub Pages; the claude.ai version blocks embedded players.
 
+## Daily Pyramid
+
+Tap **📅 Daily Pyramid** on the main menu for today's six lists, one from each theme. Everyone gets the same lists on the same day, so you can compare scores, and **Share my score** copies a spoiler-free summary. Each theme's 30 lists are dealt in a fixed shuffled order, one a day, so no list repeats until the theme has gone round once. Only today's progress is kept on your device.
+
+## Ties
+
+- **Theme vote:** if two or more themes tie, one voter from each tied theme plays blackjack, so a three-way tie means three players at the table. Players who tie for the best hand play again until one wins and picks the theme.
+- **Mini-games:** if the top players finish level, they go to **sudden death**: a number question, and the closest guess wins (fastest if equal).
+- Timed mini-games end the moment someone wins: first to find the 3 differences, first with 3 right answers in the 10-Second Challenge, first to remember all 15 objects, or first correct guess in Guess the Song and Who Am I?.
+
+At the end of a game the final screen shows the join code and QR code again, so new players can join for the next game.
+
 ## Guess the Song
 
 The TV plays a 5-second clip from the [Top 100 most-streamed songs playlist](https://soundcloud.com/dj_antidope/sets/top-100-most-streamed-songs-on) on SoundCloud. It plays again at 25 and 50 seconds, and the host can replay it. To land on the hook, the game reads the track's SoundCloud waveform and starts the clip at the first 5-second stretch that reaches the song's loudest level, which is usually the first chorus. When someone wins, the TV plays 10 seconds of the song as the reveal. Song and artist names come from the track titles on SoundCloud, and close answers go to the host check. The clip needs the SoundCloud player, so on claude.ai (or if SoundCloud doesn't load) the mini-game uses emoji clues instead. To use another playlist, change `SONG_URL` in `src/online.js`.

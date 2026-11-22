@@ -1,12 +1,12 @@
 /* ---------- half-time mini-game content ---------- */
 const MG_LIST = [
   {id:'spot',   name:'Spot the Difference', color:'#b9a6f5', rule:'Two pictures on the TV. Tap the 3 changes on your phone. First to find all 3 wins.'},
-  {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. Most correct wins; fastest breaks a tie.'},
-  {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins.'},
+  {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. First to get all 3 right wins on the spot; otherwise most correct wins. A tie goes to sudden death.'},
+  {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins; a tie goes to sudden death.'},
   {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'A 5-second clip of a massive hit plays on the TV. Type the song and the artist. First correct answer wins.'},
-  {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember.'},
+  {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember. Get all 15 to win on the spot; a tie goes to sudden death.'},
   {id:'who',    name:'Who Am I?',           color:'#f2a97e', rule:'Clues appear one by one, hardest first. First correct guess wins.'},
-  {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins.'}
+  {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins; if the last players go out together, sudden death decides.'}
 ];
 
 const L_COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda|antigua','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina|bosnia','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Canada','Cape Verde|cabo verde','Central African Republic|car','Chad','Chile','China','Colombia','Comoros','Congo|republic of the congo','DR Congo|drc|democratic republic of the congo','Costa Rica','Croatia','Cuba','Cyprus','Czechia|czech republic','Denmark','Djibouti','Dominica','Dominican Republic','East Timor|timor leste','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini|swaziland','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland|republic of ireland|eire','Israel','Italy','Ivory Coast|cote divoire','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar|burma','Namibia','Nauru','Nepal','Netherlands|holland','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia|macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis|st kitts','Saint Lucia|st lucia','Saint Vincent and the Grenadines|st vincent','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea|korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Togo','Tonga','Trinidad and Tobago|trinidad','Tunisia','Turkey|turkiye','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates|uae','United Kingdom|uk|great britain|britain','United States|usa|us|america','Uruguay','Uzbekistan','Vanuatu','Vatican City|vatican','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','England','Scotland','Wales','Northern Ireland'];
@@ -91,4 +91,36 @@ const WHO = [
   {n:'Shrek', a:['shrek'], c:['I live alone in a swamp.','My best friend is a talking donkey.','I married Princess Fiona.','I say ogres are like onions.','I\'m a big green ogre.']},
   {n:'Gordon Ramsay', a:['gordon ramsay','ramsay'], c:['I was born in Johnstone, Scotland, in 1966.','I played youth football for Rangers.','My restaurants have earned many Michelin stars.','I host Hell\'s Kitchen.','I\'m a famously sweary TV chef.']},
   {n:'Michael Jackson', a:['michael jackson','mj','jackson'], c:['I was born in Gary, Indiana, in 1958.','I started out singing with my brothers.','I released the best-selling album of all time.','I made the moonwalk famous.','I\'m known as the King of Pop.']}
+];
+
+/* Sudden death: when a mini-game ends level, the tied players guess a number and the closest wins */
+const SD_QS = [
+  ['In what year did the Titanic sink?', 1912, ''],
+  ['How many bones are in an adult human body?', 206, 'bones'],
+  ['How tall is the Eiffel Tower, in metres?', 330, 'm'],
+  ['In what year did the first iPhone go on sale?', 2007, ''],
+  ['How many keys are on a standard piano?', 88, 'keys'],
+  ['How many minutes are there in a day?', 1440, 'minutes'],
+  ['How tall is Mount Everest, in metres?', 8849, 'm'],
+  ['In what year did the Berlin Wall fall?', 1989, ''],
+  ['How many Premier League goals did Alan Shearer score?', 260, 'goals'],
+  ['How many episodes of Friends were made?', 236, 'episodes'],
+  ['How far away is the Moon, in kilometres (on average)?', 384400, 'km'],
+  ['How many countries are members of the United Nations?', 193, 'countries'],
+  ['At what temperature does water boil, in Fahrenheit?', 212, '°F'],
+  ['In what year did Elvis Presley die?', 1977, ''],
+  ['How many people does Wembley Stadium hold?', 90000, 'people'],
+  ['How many floors does the Burj Khalifa have?', 163, 'floors'],
+  ['How many years did Queen Elizabeth II reign?', 70, 'years'],
+  ['How many seconds are there in an hour?', 3600, 'seconds'],
+  ['In what year did the Channel Tunnel open?', 1994, ''],
+  ['How long is a marathon, in metres?', 42195, 'm'],
+  ['How many dots are there on a pair of dice?', 42, 'dots'],
+  ['In what year was Google founded?', 1998, ''],
+  ['How many James Bond films have Eon made (up to No Time to Die)?', 25, 'films'],
+  ['How many days are there in a leap year?', 366, 'days'],
+  ['How many miles long is the River Thames?', 215, 'miles'],
+  ['In what year did the first Harry Potter book come out?', 1997, ''],
+  ['How many Grammys has Beyoncé won (up to 2026)?', 35, 'Grammys'],
+  ['How many squares are on a chessboard?', 64, 'squares'],
 ];

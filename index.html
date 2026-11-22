@@ -428,6 +428,33 @@ body.tv .dbl{font-size:20px;padding:8px 20px}
 .listen{display:grid;place-items:center;margin:18px auto 6px;width:clamp(130px,18vw,200px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(138,180,248,.28),rgba(138,180,248,.06) 70%);border:2px solid rgba(138,180,248,.5);font-size:clamp(60px,9vw,96px)}
 .listen.on{animation:listen 1.1s ease-in-out infinite}
 @keyframes listen{0%,100%{box-shadow:0 0 0 0 rgba(138,180,248,.5);transform:scale(1)}50%{box-shadow:0 0 0 22px rgba(138,180,248,0);transform:scale(1.05)}}
+/* next game: join panel on the final screen */
+.nextjoin{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:720px;margin:18px auto 0;text-align:left;animation:fadeUp .6s 1.4s ease-out both}
+.nextjoin .nqr{width:170px;height:170px;border-radius:12px;display:block;image-rendering:pixelated}
+.nextjoin h3{margin:0 0 6px}
+.nextjoin .nbig{font:800 44px/1 "JetBrains Mono",monospace;color:var(--acc);letter-spacing:.12em;margin:6px 0}
+.bj.n3 .card,.bj.n4 .card,.bj.n5 .card,.bj.n6 .card{transform:scale(.85)}
+
+/* ---------- Daily Pyramid ---------- */
+.dailydoor{display:flex;align-items:center;gap:16px;width:100%;margin-top:20px;padding:16px 20px;border-radius:20px;text-align:left;cursor:pointer;color:var(--ink);background:linear-gradient(120deg,rgba(185,166,245,.22),rgba(138,180,248,.14));border:1px solid rgba(185,166,245,.45);transition:transform .2s,box-shadow .2s}
+.dailydoor:hover{transform:translateY(-2px);box-shadow:0 14px 34px -18px rgba(185,166,245,.7)}
+.dailydoor .dcal{font-size:38px}
+.dailydoor .dtxt{display:flex;flex-direction:column;gap:3px;flex:1}
+.dailydoor b{font:800 21px/1.2 "Inter Tight",Inter,sans-serif}
+.dailydoor b em{font-style:normal;font-weight:700;font-size:13px;margin-left:8px;padding:2px 9px;border-radius:99px;background:var(--acc);color:#15121f;vertical-align:middle}
+.dailydoor .dtxt>span{color:var(--muted);font-size:14.5px;font-weight:400}
+.dailydoor .dgo{font-weight:800;color:var(--acc);white-space:nowrap}
+.dhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:center;margin:6px 0 4px;color:var(--muted);font-size:14.5px}
+.dhead .dnum{font-weight:800;color:var(--acc)}
+.dpips{display:flex;gap:6px}
+.dpips i{font-style:normal;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.05);opacity:.45;font-size:15px}
+.dpips i.done{opacity:.85;background:rgba(166,217,160,.18)}
+.dpips i.now{opacity:1;background:rgba(185,166,245,.3);box-shadow:0 0 0 2px var(--acc)}
+.drows{list-style:none;margin:14px auto 6px;padding:0;max-width:520px;display:grid;gap:6px;text-align:left}
+.drows li{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.05)}
+.drows .n{flex:1;font-size:14.5px}
+.drows b{font-family:"JetBrains Mono",monospace}
+.dshare{white-space:pre-wrap;text-align:left;margin:10px auto;max-width:420px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.3);font-size:14px}
 
 /* TV mode: bigger everything, controls tucked away */
 body.tv .wrap{max-width:1600px}
@@ -456,6 +483,11 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
 
   <!-- HOME -->
   <section id="vHome">
+    <button class="dailydoor" type="button" data-go="daily">
+      <span class="dcal" aria-hidden="true">📅</span>
+      <span class="dtxt"><b>Daily Pyramid <em id="dailyNum"></em></b><span>Six new lists today, one from each theme. The same lists for everyone, so you can compare scores.</span></span>
+      <span class="dgo" aria-hidden="true">Play →</span>
+    </button>
     <div class="doors">
       <button class="door" type="button" data-go="solo">
         <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="19" y="2" width="16" height="10" rx="2" fill="#e9eaf0"/><rect x="10" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="28" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="1" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="19" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="37" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/></svg>
@@ -471,6 +503,27 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
       </button>
     </div>
     <div class="menurow"><button class="ghost musicbtn" type="button" id="mMenu"><span aria-hidden="true">🎷</span> Play the Jazz House</button><span class="sub">Background music for game night, from SoundCloud.</span></div>
+  </section>
+
+  <!-- DAILY -->
+  <section id="vDaily" class="hidden">
+    <div class="dhead" id="dHead"></div>
+    <div id="dPlay">
+      <div id="dBoard"></div>
+      <div class="bar">
+        <button class="go" type="button" id="dCheck" disabled>Check my pyramid</button>
+        <button class="ghost" type="button" id="dClear">Clear</button>
+      </div>
+      <div class="banner hidden" id="dResult"><div class="big" id="dScore"></div><p id="dMsg"></p><div class="bar"><button class="go" type="button" id="dNext">Next</button></div></div>
+    </div>
+    <div id="dSum" class="hidden">
+      <div class="banner"><div class="lbl">Today's score</div><div class="big" id="dTotal"></div><p id="dVerdict"></p>
+        <ol class="drows" id="dRows"></ol>
+        <div class="bar"><button class="go" type="button" id="dShare">Share my score</button></div>
+        <pre class="dshare hidden" id="dShareTxt"></pre>
+        <p class="sub" id="dNextIn"></p>
+      </div>
+    </div>
   </section>
 
   <!-- SOLO -->
@@ -2269,6 +2322,88 @@ const GROUPS = [
   for (const g of GROUPS) g.emoji=EMO[g.id]||'⭐';
 }
 
+/* Lists chosen in the November 2026 review: each replaces the list with the old id (in its place),
+   or is added (old id null). Items are [answer, figure shown on reveal]. */
+{
+  const R = [
+  // ---------- Geography ----------
+  ['geo','mtn',{id:'r_mtn',t:'Famous mountains by height',n:'Height above sea level.',items:[['Everest','8,849 m'],['K2','8,611 m'],['Aconcagua','6,961 m'],['Denali','6,190 m'],['Kilimanjaro','5,895 m'],['Mount Elbrus','5,642 m'],['Mont Blanc','4,806 m'],['Matterhorn','4,478 m'],['Mount Fuji','3,776 m'],['Ben Nevis','1,345 m']]}],
+  ['geo','river',{id:'r_landmarks',t:'Famous landmarks by height',n:'Measured to the very tip.',items:[['Burj Khalifa','828 m'],['CN Tower','553 m'],['Petronas Towers','452 m'],['Empire State Building','443 m'],['Eiffel Tower','330 m'],['The Shard','310 m'],['Blackpool Tower','158 m'],['London Eye','135 m'],['Big Ben (Elizabeth Tower)','96 m'],['Statue of Liberty','93 m']]}],
+  ['geo','islands',{id:'r_islands',t:'Famous islands by size',n:'By area.',items:[['Greenland','2.1m km²'],['Madagascar','587,000 km²'],['Great Britain','209,000 km²'],['Iceland','102,000 km²'],['Ireland','84,000 km²'],['Sicily','25,700 km²'],['Jamaica','11,000 km²'],['Cyprus','9,250 km²'],['Majorca','3,640 km²'],['Isle of Wight','380 km²']]}],
+  ['geo','lakes',{id:'r_gdp',t:'Biggest economies in the world',n:'GDP in 2023 (IMF).',items:[['United States','$27.4tn'],['China','$17.8tn'],['Germany','$4.5tn'],['Japan','$4.2tn'],['India','$3.6tn'],['United Kingdom','$3.3tn'],['France','$3.0tn'],['Italy','$2.3tn'],['Brazil','$2.2tn'],['Canada','$2.1tn']]}],
+  ['geo','g_canarea',{id:'r_asiapop',t:'Most populous countries in Asia',n:'2026 estimates, not counting Russia and Turkey.',items:[['India','1.47bn'],['China','1.41bn'],['Indonesia','288m'],['Pakistan','258m'],['Bangladesh','177m'],['Japan','122m'],['Philippines','118m'],['Vietnam','102m'],['Iran','93m'],['Thailand','72m']]}],
+  ['geo','g_bislands',{id:'r_eupop',t:'Most populous EU countries',n:'Eurostat, 2025.',items:[['Germany','83.6m'],['France','68.6m'],['Italy','59.0m'],['Spain','49.1m'],['Poland','36.5m'],['Romania','19.0m'],['Netherlands','18.0m'],['Belgium','11.9m'],['Czechia','10.9m'],['Portugal','10.7m']]}],
+  ['geo','g_medisl',{id:'r_euarea',t:'Largest countries in Europe',n:'Whole countries, Russia included. Norway counts Svalbard.',items:[['Russia','17.1m km²'],['Ukraine','604,000 km²'],['France','552,000 km²'],['Spain','506,000 km²'],['Sweden','450,000 km²'],['Norway','385,000 km²'],['Germany','358,000 km²'],['Finland','338,000 km²'],['Poland','313,000 km²'],['Italy','302,000 km²']]}],
+  ['geo','g_canpop',{id:'r_capitals',t:'Capitals of the ten biggest countries',n:"In order of their country's size.",items:[['Moscow','Russia'],['Ottawa','Canada'],['Washington, D.C.','United States'],['Beijing','China'],['Brasília','Brazil'],['Canberra','Australia'],['New Delhi','India'],['Buenos Aires','Argentina'],['Astana','Kazakhstan'],['Algiers','Algeria']]}],
+  ['geo','g_nalakes',{id:'r_airports',t:"World's busiest airports",n:'Passengers in 2023.',items:[['Atlanta','104.7m'],['Dubai','87.0m'],['Dallas/Fort Worth','81.8m'],['London Heathrow','79.2m'],['Tokyo Haneda','78.7m'],['Denver','77.8m'],['Istanbul','76.0m'],['Los Angeles','75.1m'],["Chicago O'Hare",'73.9m'],['Delhi','72.2m']]}],
+  // ---------- Sport ----------
+  ['sport','s_oly1',{id:'r_moments',t:'Iconic sporting moments in order',n:'In order.',items:[['England win the World Cup','1966'],['Rumble in the Jungle','1974'],["Maradona's Hand of God",'1986'],["Jonny Wilkinson's World Cup drop goal",'2003'],['England win the Ashes','2005'],['Usain Bolt runs 9.58','2009'],['Super Saturday at London 2012','2012'],['Leicester win the league','2016'],['Lionesses win the Euros','2022'],['Messi wins the World Cup','2022']]}],
+  ['sport','s_winter',{id:'r_legends',t:'Sporting legends from oldest to youngest',n:'By date of birth.',items:[['Pelé','1940'],['Muhammad Ali','1942'],['Diego Maradona','1960'],['Michael Jordan','1963'],['Tiger Woods','1975'],['LeBron James','1984'],['Usain Bolt','1986'],['Conor McGregor','1988'],['Simone Biles','1997'],['Max Verstappen','1997']]}],
+  ['sport','s_euro1st',{id:'r_grounds',t:'Famous sports grounds by opening year',n:'When each first opened.',items:[["Lord's",'1814'],['Anfield','1884'],['Twickenham','1909'],['Old Trafford','1910'],['Wembley (the original)','1923'],['Camp Nou','1957'],['Millennium Stadium','1999'],['Emirates Stadium','2006'],['Wembley (the new one)','2007'],['Tottenham Hotspur Stadium','2019']]}],
+  ['sport','s_lfcmgr',{id:'r_transfers',t:'World-record transfers in order',n:'Each one broke the world transfer record.',items:[['Diego Maradona','1982'],['Ruud Gullit','1987'],['Roberto Baggio','1990'],['Alan Shearer','1996'],['Ronaldo (Brazil)','1997'],['Luís Figo','2000'],['Zinedine Zidane','2001'],['Cristiano Ronaldo','2009'],['Gareth Bale','2013'],['Neymar','2017']]}],
+  ['sport','s_bdor90',{id:'r_footballers',t:'Footballers from oldest to youngest',n:'By date of birth.',items:[['Zlatan Ibrahimović','1981'],['Cristiano Ronaldo','1985'],['Lionel Messi','1987'],['Mohamed Salah','1992'],['Harry Kane','1993'],['Kylian Mbappé','1998'],['Erling Haaland','2000'],['Bukayo Saka','2001'],['Jude Bellingham','2003'],['Lamine Yamal','2007']]}],
+  ['sport','s_paristot',{id:'r_managers',t:'Football managers from oldest to youngest',n:'By date of birth.',items:[['Alex Ferguson','1941'],['Arsène Wenger','1949'],['Carlo Ancelotti','1959'],['José Mourinho','1963'],['Jürgen Klopp','1967'],['Gareth Southgate','1970'],['Pep Guardiola','1971'],['Mauricio Pochettino','1972'],['Thomas Tuchel','1973'],['Mikel Arteta','1982']]}],
+  ['sport','s_nbareb',{id:'r_britstars',t:'British sports stars from oldest to youngest',n:'By date of birth.',items:[['David Beckham','1975'],['Lewis Hamilton','1985'],['Andy Murray','1987'],['Tyson Fury','1988'],['Anthony Joshua','1989'],['Harry Kane','1993'],['Tom Daley','1994'],['Emma Raducanu','2002'],['Jude Bellingham','2003'],['Luke Littler','2007']]}],
+  ['sport','s_commgames',{id:'r_tennis',t:'Tennis stars from oldest to youngest',n:'By date of birth.',items:[['Venus Williams','1980'],['Roger Federer','1981'],['Serena Williams','1981'],['Rafael Nadal','1986'],['Novak Djokovic','1987'],['Daniil Medvedev','1996'],['Naomi Osaka','1997'],['Jannik Sinner','2001'],['Carlos Alcaraz','2003'],['Coco Gauff','2004']]}],
+  // ---------- Music ----------
+  ['music','m_xmas10s',{id:'r_malepop',t:'Male pop stars from oldest to youngest',n:'By date of birth.',items:[['Elton John','1947'],['Michael Jackson','1958'],['George Michael','1963'],['Robbie Williams','1974'],['Justin Timberlake','1981'],['Bruno Mars','1985'],['The Weeknd','1990'],['Justin Bieber','1994'],['Lewis Capaldi','1996'],['Shawn Mendes','1998']]}],
+  ['music','m_beatles1',{id:'r_grammys',t:'Music stars with the most Grammy wins',n:'Career Grammy wins, up to the 2026 awards.',items:[['Beyoncé','35'],['Kendrick Lamar','27'],['Jay-Z','25'],['Kanye West','24'],['U2','22'],['Aretha Franklin','18'],['Alicia Keys','17'],['Adele','16'],['Eminem','15'],['Taylor Swift','14']]}],
+  ['music','m_taylor1',{id:'r_ukrap',t:'UK rappers from oldest to youngest',n:'By date of birth.',items:[['Wiley','1979'],['Ms. Dynamite','1981'],['Skepta','1982'],['Dizzee Rascal',''],['Tinie Tempah','1988'],['Stormzy','1993'],['Little Simz','1994'],['J Hus','1996'],['Central Cee','1998'],['Aitch','1999']]}],
+  ['music','m_rihanna1',{id:'r_bruno',t:'Bruno Mars hits in release order',n:'Singles, including duets.',items:[['Grenade','2010'],['Locked Out of Heaven','2012'],['When I Was Your Man','2013'],['Treasure','2013'],['24K Magic','2016'],["That's What I Like",'2017'],['Finesse','2018'],['Leave the Door Open','2021'],['Die with a Smile','2024'],['APT.','2024']]}],
+  ['music','m_composers',{id:'r_00s',t:'2000s hits, one from each year',n:'2000 to 2009, in order.',items:[['Oops!... I Did It Again','2000'],["Can't Get You Out of My Head",'2001'],['A Thousand Miles','2002'],['Hey Ya!','2003'],['Yeah!','2004'],["You're Beautiful",'2005'],["Hips Don't Lie",'2006'],['Umbrella','2007'],['Viva la Vida','2008'],['I Gotta Feeling','2009']]}],
+  ['music','m_hiphop',{id:'r_raphits',t:'Rap hits in release order',n:'Singles.',items:[['Lose Yourself','2002'],['In Da Club','2003'],['Gold Digger','2005'],['Empire State of Mind','2009'],['Super Bass','2011'],['Thrift Shop','2012'],['Hotline Bling','2015'],['Rockstar','2017'],['Sicko Mode','2018'],['Not Like Us','2024']]}],
+  ['music','m_queen',{id:'r_bands',t:'Famous bands in order of forming',n:'When each band got together.',items:[['The Beatles','1960'],['The Rolling Stones','1962'],['Queen','1970'],['ABBA','1972'],['U2','1976'],['Radiohead','1985'],['Blur','1988'],['Oasis','1991'],['Coldplay','1996'],['Arctic Monkeys','2002']]}],
+  ['music','m_beyonce',{id:'r_10s',t:'2010s hits, one from each year',n:'2010 to 2019, in order.',items:[['Just the Way You Are','2010'],['Somebody That I Used to Know','2011'],['Gangnam Style','2012'],['Get Lucky','2013'],['Uptown Funk','2014'],['Sorry','2015'],['One Dance','2016'],['Shape of You','2017'],["God's Plan",'2018'],['Bad Guy','2019']]}],
+  ['music','m_eminem',{id:'r_summer',t:'Summer anthems in release order',n:'Singles.',items:[['Summer Nights','1978'],['Club Tropicana','1983'],['The Boys of Summer','1984'],["Summer of '69",'1985'],['Summertime','1991'],['Dancing in the Moonlight','2000'],['Summer','2014'],['Despacito','2017'],['Watermelon Sugar','2019'],['Espresso','2024']]}],
+  ['music','m_adele',{id:'r_rihanna',t:'Rihanna hits in release order',n:'Singles.',items:[['SOS','2006'],['Unfaithful','2006'],['Umbrella','2007'],['Disturbia','2008'],['Rude Boy','2010'],['Only Girl (In the World)','2010'],['We Found Love','2011'],['Diamonds','2012'],['Work','2016'],['Lift Me Up','2022']]}],
+  ['music','m_eurovision',{id:'r_moviesongs',t:'Movie songs in release order',n:"By the film's release.",items:[['Eye of the Tiger','1982'],['Ghostbusters','1984'],['Take My Breath Away','1986'],["(I've Had) The Time of My Life",'1987'],['I Will Always Love You','1992'],['My Heart Will Go On','1997'],['Happy','2013'],["Can't Stop the Feeling!",'2016'],['Shallow','2018'],['What Was I Made For?','2023']]}],
+  ['music',null,{id:'r_musictv',t:'Music TV shows by first episode',n:'In order.',items:[['Eurovision Song Contest','1956'],['Top of the Pops','1964'],['Stars in Their Eyes','1990'],['Later... with Jools Holland','1992'],['Never Mind the Buzzcocks','1996'],['Pop Idol','2001'],['Fame Academy','2002'],['The X Factor','2004'],['The Voice UK','2012'],['The Masked Singer','2020']]}],
+  ['music',null,{id:'r_dance',t:'Dance-craze songs in release order',n:'The famous versions.',items:[['The Twist','1960'],['The Loco-Motion','1962'],['Y.M.C.A.','1978'],['Thriller','1983'],['Vogue','1990'],['Macarena','1995'],['Cha Cha Slide','2000'],['Crank That (Soulja Boy)','2007'],['Single Ladies','2008'],['Watch Me (Whip/Nae Nae)','2015']]}],
+  ['music',null,{id:'r_breakthrough',t:'Breakthrough hits in release order',n:"Each star's first big hit.",items:[['...Baby One More Time (Britney Spears)','1998'],['Genie in a Bottle (Christina Aguilera)','1999'],['Crazy in Love (Beyoncé)','2003'],['Pon de Replay (Rihanna)','2005'],['Just Dance (Lady Gaga)','2008'],['The A Team (Ed Sheeran)','2011'],['Royals (Lorde)','2013'],['Be the One (Dua Lipa)','2015'],['Ocean Eyes (Billie Eilish)','2016'],['Sign of the Times (Harry Styles)','2017']]}],
+  ['music',null,{id:'r_coldplay',t:'Coldplay hits in release order',n:'Singles.',items:[['Yellow','2000'],['Clocks','2003'],['Speed of Sound','2005'],['Fix You','2005'],['Paradise','2011'],['A Sky Full of Stars','2014'],['Hymn for the Weekend','2016'],['Something Just Like This','2017'],['Higher Power','2021'],['My Universe','2021']]}],
+  ['music',null,{id:'r_karaoke',t:'Karaoke favourites in release order',n:'Singles.',items:[['Sweet Caroline','1969'],['Dancing Queen','1976'],["Don't Stop Believin'",'1981'],["Livin' on a Prayer",'1986'],['I Wanna Dance with Somebody','1987'],['Angels','1997'],['Mr. Brightside','2004'],['Valerie','2007'],['Shut Up and Dance','2014'],['Dancing on My Own','2016']]}],
+  ['music',null,{id:'r_playmusic',t:'Ways to play music, in order of invention',n:'In order.',items:[['Phonograph','1877'],['Radio broadcasts','1920'],['Vinyl LP','1948'],['Cassette tape','1963'],['Sony Walkman','1979'],['CD','1982'],['MiniDisc','1992'],['MP3 player','1998'],['iPod','2001'],['Spotify','2008']]}],
+  ['music',null,{id:'r_onename',t:'One-name singers from oldest to youngest',n:'By date of birth.',items:[['Cher','1946'],['Prince','1958'],['Seal','1963'],['Shakira','1977'],['Usher','1978'],['Pink','1979'],['Adele','1988'],['Zendaya','1996'],['Lorde','1996'],['RAYE','1997']]}],
+  // ---------- History ----------
+  ['history','moon',{id:'r_potus',t:'US presidents from Nixon to Biden',n:'In order.',items:[['Richard Nixon','1969'],['Gerald Ford','1974'],['Jimmy Carter','1977'],['Ronald Reagan','1981'],['George H. W. Bush','1989'],['Bill Clinton','1993'],['George W. Bush','2001'],['Barack Obama','2009'],['Donald Trump','2017'],['Joe Biden','2021']]}],
+  ['history','space',{id:'r_men',t:'Famous men in history, oldest first',n:'By year of birth.',items:[['Julius Caesar','100 BC'],['William the Conqueror','c. 1028'],['Henry VIII','1491'],['William Shakespeare','1564'],['Napoleon','1769'],['Abraham Lincoln','1809'],['Mahatma Gandhi','1869'],['Winston Churchill','1874'],['Nelson Mandela','1918'],['Martin Luther King Jr.','1929']]}],
+  ['history','states13',{id:'r_women',t:'Famous women in history, oldest first',n:'By year of birth.',items:[['Cleopatra','69 BC'],['Joan of Arc','1412'],['Elizabeth I','1533'],['Queen Victoria','1819'],['Florence Nightingale','1820'],['Emmeline Pankhurst','1858'],['Marie Curie','1867'],['Rosa Parks','1913'],['Margaret Thatcher','1925'],['Malala Yousafzai','1997']]}],
+  ['history','rome',{id:'r_tech',t:'Tech launches in order',n:'By the year they came out.',items:[['Sony Walkman','1979'],['CD','1982'],['Game Boy','1989'],['DVD','1996'],['Google','1998'],['Wikipedia','2001'],['YouTube','2005'],['iPhone','2007'],['Instagram','2010'],['ChatGPT','2022']]}],
+  ['history','olyhosts',{id:'r_royals',t:'The royal family from oldest to youngest',n:'By date of birth.',items:[['Queen Camilla','1947'],['King Charles III','1948'],['Princess Anne','1950'],['Prince Andrew','1960'],['Prince Edward','1964'],['Meghan, Duchess of Sussex','1981'],['Catherine, Princess of Wales','1982'],['Prince William','1982'],['Prince Harry','1984'],['Prince George','2013']]}],
+  ['history','h_tudor',{id:'r_periods',t:'Periods of British history in order',n:'Earliest first.',items:[['Stone Age',''],['Bronze Age',''],['Iron Age',''],['Roman Britain','AD 43'],['Anglo-Saxon','c. 410'],['Norman','1066'],['Tudor','1485'],['Georgian','1714'],['Victorian','1837'],['Edwardian','1901']]}],
+  ['history','h_norman',{id:'r_landmarksuk',t:'British landmarks, oldest first',n:'By when each was built.',items:[['Stonehenge','c. 3000 BC'],["Hadrian's Wall",'AD 122'],['Tower of London','1078'],['Hampton Court Palace','1515'],["St Paul's Cathedral",'1710'],['Big Ben','1859'],['Tower Bridge','1894'],['Angel of the North','1998'],['London Eye','2000'],['The Shard','2012']]}],
+  ['history','h_britain',{id:'r_90s',t:'Big moments of the 1990s in order',n:'In order.',items:[['Nelson Mandela freed','1990'],['Gulf War','1991'],['First Premier League season','1992'],['Channel Tunnel opens','1994'],['Toy Story released','1995'],['Euro 96 in England','1996'],['Death of Princess Diana','1997'],['Good Friday Agreement','1998'],['Euro currency launched','1999'],['The millennium','2000']]}],
+  ['history','h_usa',{id:'r_icons',t:'20th-century icons, oldest first',n:'By year of birth.',items:[['Albert Einstein','1879'],['Charlie Chaplin','1889'],['Walt Disney','1901'],['Marilyn Monroe','1926'],['Audrey Hepburn','1929'],['Elvis Presley','1935'],['John Lennon','1940'],['Steve Jobs','1955'],['Michael Jackson','1958'],['Princess Diana','1961']]}],
+  ['history','h_germany',{id:'r_medical',t:'Medical milestones in order',n:'In order.',items:[['First vaccine (smallpox)','1796'],['First operation under anaesthetic','1846'],['X-rays discovered','1895'],['Penicillin discovered','1928'],['NHS founded','1948'],["DNA's double helix found",'1953'],['First heart transplant','1967'],['First IVF baby','1978'],['Dolly the sheep cloned','1996'],['First COVID vaccine given','2020']]}],
+  ['history','h_potus3',{id:'r_transport',t:'Transport milestones in order',n:'In order.',items:[['First public steam railway','1825'],['London Underground opens','1863'],['First motor car','1886'],["Wright brothers' first flight",'1903'],['Ford Model T','1908'],['First jet airliner','1952'],["Concorde's first flight",'1969'],['Channel Tunnel opens','1994'],['First Tesla car','2008'],['Elizabeth line opens','2022']]}],
+  ['history','h_potus4',{id:'r_2000s',t:'Big moments of the 2000s in order',n:'In order.',items:[['Millennium Dome opens','2000'],['First Harry Potter film','2001'],['Euro notes and coins arrive','2002'],["Concorde's last flight",'2003'],['Facebook launches','2004'],['London wins the 2012 Olympics','2005'],['Pluto stops being a planet','2006'],['Smoking ban in England','2007'],['Barack Obama elected','2008'],['Michael Jackson dies','2009']]}],
+  ['history','h_ancient',{id:'r_companies',t:'Famous companies by founding year',n:'In order.',items:[['Coca-Cola','1886'],['Ford','1903'],['Disney','1923'],['LEGO','1932'],["McDonald's",'1940'],['Microsoft','1975'],['Apple','1976'],['Amazon','1994'],['Google','1998'],['Facebook','2004']]}],
+  ['history','h_houses',{id:'r_wars',t:'Wars since 1950, in order of starting',n:'By the year each began.',items:[['Korean War','1950'],['Vietnam War','1955'],['Falklands War','1982'],['Gulf War','1990'],['Bosnian War','1992'],['Kosovo War','1998'],['War in Afghanistan','2001'],['Iraq War','2003'],['Syrian civil war','2011'],["Russia's invasion of Ukraine",'2022']]}],
+  // ---------- Film, TV & pop culture ----------
+  ['pop','doctor',{id:'r_potter',t:'Wizarding World films in release order',n:'Harry Potter and Fantastic Beasts.',items:[["Philosopher's Stone",'2001'],['Chamber of Secrets','2002'],['Prisoner of Azkaban','2004'],['Goblet of Fire','2005'],['Order of the Phoenix','2007'],['Half-Blood Prince','2009'],['Deathly Hallows – Part 1','2010'],['Deathly Hallows – Part 2','2011'],['Fantastic Beasts and Where to Find Them','2016'],['The Crimes of Grindelwald','2018']]}],
+  ['pop','disney',{id:'r_dreamworks',t:'DreamWorks animated films in release order',n:'In order.',items:[['Shrek','2001'],['Shrek 2','2004'],['Madagascar','2005'],['Kung Fu Panda','2008'],['How to Train Your Dragon','2010'],['Puss in Boots','2011'],['The Croods','2013'],['Trolls','2016'],['The Boss Baby','2017'],['The Bad Guys','2022']]}],
+  ['pop','celeb',{id:'r_britcom',t:'British comedies by first episode',n:'In order.',items:[['Mr. Bean','1990'],['Father Ted','1995'],['The Royle Family','1998'],['Peep Show','2003'],['The Inbetweeners','2008'],['Miranda','2009'],["Mrs Brown's Boys",'2011'],['Fleabag','2016'],['Derry Girls','2018'],['Ghosts','2019']]}],
+  ['pop','strictly',{id:'r_franchises',t:'Film series by their first film',n:'In order.',items:[['James Bond','1962'],['Star Wars','1977'],['Indiana Jones','1981'],['Toy Story','1995'],['Shrek','2001'],['The Lord of the Rings','2001'],['Pirates of the Caribbean','2003'],['Twilight','2008'],['Despicable Me','2010'],['The Hunger Games','2012']]}],
+  ['pop','xfactor',{id:'r_tvstars',t:'TV stars from oldest to youngest',n:'By date of birth.',items:[['David Attenborough','1926'],['Simon Cowell','1959'],['Jeremy Clarkson','1960'],['Phillip Schofield','1962'],['Graham Norton','1963'],['Gordon Ramsay','1966'],['Claudia Winkleman','1972'],['Alan Carr','1976'],['Holly Willoughby','1981'],['Stacey Solomon','1989']]}],
+  ['pop','p_renaissance',{id:'r_dramas',t:'Hit TV dramas by first episode',n:'In order.',items:[['The Sopranos','1999'],['Lost','2004'],['Breaking Bad','2008'],['Game of Thrones','2011'],['Line of Duty','2012'],['Peaky Blinders','2013'],['Stranger Things','2016'],['Squid Game','2021'],['Wednesday','2022'],['Adolescence','2025']]}],
+  ['pop','p_pixar2',{id:'r_cartoontv',t:'Cartoon TV shows by first episode',n:'In order.',items:[['The Flintstones','1960'],['Scooby-Doo','1969'],['Danger Mouse','1981'],['The Simpsons','1989'],['Rugrats','1991'],['South Park','1997'],['Family Guy','1999'],['Phineas and Ferb','2007'],['Adventure Time','2010'],['Rick and Morty','2013']]}],
+  ['pop','p_bond2',{id:'r_films',t:'Famous films in release order',n:'In order.',items:[['The Wizard of Oz','1939'],['Jaws','1975'],['E.T.','1982'],['Back to the Future','1985'],['Jurassic Park','1993'],['Titanic','1997'],['The Matrix','1999'],['Avatar','2009'],['Inception','2010'],['Barbie','2023']]}],
+  ['pop','p_mcu2',{id:'r_kidsbooks',t:"Children's books in order of publication",n:'In order.',items:[["Alice's Adventures in Wonderland",'1865'],['The Tale of Peter Rabbit','1902'],['Winnie-the-Pooh','1926'],['The Hobbit','1937'],['The Lion, the Witch and the Wardrobe','1950'],['The Cat in the Hat','1957'],['The Very Hungry Caterpillar','1969'],['Matilda','1988'],["Harry Potter and the Philosopher's Stone",'1997'],['The Gruffalo','1999']]}],
+  ['pop','p_strictly2',{id:'r_themeparks',t:'Theme parks by opening year',n:'When each opened as a theme park.',items:[['Blackpool Pleasure Beach','1896'],['Disneyland','1955'],['Walt Disney World','1971'],['Thorpe Park','1979'],['Alton Towers','1980'],['EPCOT','1982'],['Disneyland Paris','1992'],['Legoland Windsor','1996'],['The Wizarding World of Harry Potter','2010'],['Epic Universe','2025']]}],
+  ['pop','p_celeb2',{id:'r_superactors',t:'Superhero actors by their first film in the role',n:'In order.',items:[['Christopher Reeve (Superman)','1978'],['Michael Keaton (Batman)','1989'],['Hugh Jackman (Wolverine)','2000'],['Tobey Maguire (Spider-Man)','2002'],['Christian Bale (Batman)','2005'],['Robert Downey Jr. (Iron Man)','2008'],['Chris Hemsworth (Thor)','2011'],['Gal Gadot (Wonder Woman)','2016'],['Tom Holland (Spider-Man)','2016'],['Robert Pattinson (Batman)','2022']]}],
+  ['pop','p_bgt',{id:'r_xmasfilms',t:'Christmas films in release order',n:'In order.',items:[["It's a Wonderful Life",'1946'],['White Christmas','1954'],['The Snowman','1982'],['Home Alone','1990'],['The Muppet Christmas Carol','1992'],['The Santa Clause','1994'],['Love Actually','2003'],['The Polar Express','2004'],['Arthur Christmas','2011'],['Klaus','2019']]}],
+  ['pop','p_bakeoff',{id:'r_sequels',t:'Film sequels in release order',n:'In order.',items:[['The Godfather Part II','1974'],['The Empire Strikes Back','1980'],['Back to the Future Part II','1989'],['Terminator 2','1991'],['Toy Story 2','1999'],['The Dark Knight','2008'],['Frozen II','2019'],['Top Gun: Maverick','2022'],['Inside Out 2','2024'],['Moana 2','2024']]}],
+  ['pop','p_bigbro',{id:'r_gamechars',t:'Video game characters by first game',n:'In order.',items:[['Pac-Man','1980'],['Mario','1981'],['Link','1986'],['Sonic','1991'],['Kirby','1992'],['Pikachu','1996'],['Lara Croft','1996'],['Master Chief','2001'],['Steve (Minecraft)','2009'],['Among Us crewmate','2018']]}],
+  ['pop','p_pokemon2',{id:'r_marvelactors',t:'Marvel actors from oldest to youngest',n:'By date of birth.',items:[['Samuel L. Jackson','1948'],['Robert Downey Jr.','1965'],['Mark Ruffalo','1967'],['Benedict Cumberbatch','1976'],['Tom Hiddleston','1981'],['Chris Evans','1981'],['Chris Hemsworth','1983'],['Elizabeth Olsen','1989'],['Letitia Wright','1993'],['Tom Holland','1996']]}],
+  ['pop','p_princess',{id:'r_longfilms',t:'Famous films, longest first',n:'Cinema running times.',items:[['The Return of the King','201 min'],['Titanic','194 min'],['Avengers: Endgame','181 min'],['The Godfather','175 min'],['Interstellar','169 min'],['Avatar','162 min'],['Inception','148 min'],['Barbie','114 min'],['The Lion King','88 min'],['Toy Story','81 min']]}],
+  ];
+  for (const [gid, oldId, cat] of R){
+    const g = GROUPS.find(x => x.id === gid);
+    const i = oldId ? g.cats.findIndex(c => c.id === oldId) : -1;
+    if (i >= 0) g.cats[i] = cat; else g.cats.push(cat);
+  }
+}
+
 /* Ten original cartoon characters: warm outlines, flat fills with darker shading, friendly faces, small looping animations (CSS in the page). */
 const AVATARS = [
   {id:'footballer', name:'Footballer'},
@@ -2558,13 +2693,14 @@ const randomCat = (not) => { let c; do{c=CATS[Math.floor(Math.random()*CATS.leng
 let view='home';
 function show(v){
   view=v;
-  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin']]){ $(id).classList.toggle('hidden',k!==v); if (k===v) enterAnim($(id)); }
+  if (v!=='daily' && location.hash==='#daily') history.replaceState(null,'',location.pathname+location.search);
+  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin'],['daily','vDaily']]){ $(id).classList.toggle('hidden',k!==v); if (k===v) enterAnim($(id)); }
   $('homeBtn').classList.toggle('hidden',v==='home');
   if (typeof musicVis==='function') { musicVis(); applyVol(); }
   $('tagline').textContent = v==='host' ? 'Host screen: put this on the TV.' : v==='join' ? 'Game night on your phone.' : 'Every answer is shown. Can you put them in the right order?';
 }
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
-  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin('');
+  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin(''); if(g==='daily') startDaily();
 }));
 $('homeBtn').addEventListener('click',()=>{ leaveOnline(); document.body.classList.remove('tv'); try{ if(document.fullscreenElement) document.exitFullscreen() }catch(e){} show('home'); try{history.replaceState(null,'',location.pathname+location.search)}catch(e){} });
 
@@ -2596,15 +2732,102 @@ $('sAgain').addEventListener('click',()=>startSolo(soloCat));
 $('sNext').addEventListener('click',()=>{ const g=GROUPS.find(x=>x.id===byId(soloCat).group); const i=g.cats.findIndex(c=>c.id===soloCat); startSolo(g.cats[(i+1)%g.cats.length].id); });
 $('sRandom').addEventListener('click',()=>startSolo(randomCat(soloCat)));
 
+/* ---------- Daily Pyramid: the same six lists for everyone today, one from each theme ---------- */
+// Each theme's 30 lists are dealt in a shuffled order that is the same on every device, one a day,
+// so no list comes back until the whole theme has been used; then a fresh shuffle starts.
+const DAILY_START = Date.UTC(2026, 10, 22); // day #1 is 22 November 2026
+function dailyRng(seed){ let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+function dailyHash(s){ let h=2166136261; for (const ch of s){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+function seededShuffle(arr, rnd){ const a=arr.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function dailyNumber(d=new Date()){ return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - DAILY_START)/864e5) + 1; }
+function dailySet(num){
+  const day=Math.max(0, num-1);
+  return GROUPS.map(g=>{
+    const ids=g.cats.map(c=>c.id).sort(), cycle=Math.floor(day/ids.length);
+    const order=seededShuffle(ids, dailyRng(dailyHash(g.id+':'+cycle)));
+    const cat=byId(order[day % ids.length]);
+    return {gid:g.id, cat, order:seededShuffle([...Array(10).keys()], dailyRng(dailyHash(cat.id+':'+num)))};
+  });
+}
+// only today's game is kept on this device (so a refresh doesn't lose it); nothing older
+let daily=null;
+function dailyKey(num){ return 'pyr-daily-'+num; }
+function dailySave(){ if (!daily) return; store(dailyKey(daily.num), JSON.stringify({i:daily.i, res:daily.res, placed:daily.play.placed, rev:daily.play.revealed})); }
+function startDaily(){
+  try { Object.keys(localStorage).filter(k=>k.startsWith('pyr-daily-') && k!==dailyKey(dailyNumber())).forEach(k=>localStorage.removeItem(k)); } catch(e) {}
+  const num=dailyNumber(), set=dailySet(num);
+  let saved=null; try{ saved=JSON.parse(store(dailyKey(num))||'null'); }catch(e){}
+  daily={num, set, i:0, res:[], play:null};
+  if (saved && Array.isArray(saved.res)){ daily.i=Math.min(saved.i||0, set.length); daily.res=saved.res.slice(0,set.length); }
+  show('daily');
+  if (location.hash!=='#daily') history.replaceState(null,'',location.pathname+location.search+'#daily'); // a refresh comes back here
+  if (daily.i>=set.length) return dailySummary();
+  dailyRound(saved && saved.i===daily.i ? saved : null);
+}
+function dailyRound(saved){
+  const r=daily.set[daily.i];
+  daily.play=newPlay(r.cat, r.order.slice());
+  if (saved && Array.isArray(saved.placed) && saved.placed.length===10){ daily.play.placed=saved.placed.slice(); daily.play.revealed=!!saved.rev; }
+  $('dSum').classList.add('hidden'); $('dPlay').classList.remove('hidden');
+  $('dHead').innerHTML=`<span class="dnum">Daily #${daily.num}</span><span>Round ${daily.i+1} of ${daily.set.length}</span><span class="dpips">${daily.set.map((s,k)=>`<i class="${k<daily.i?'done':k===daily.i?'now':''}">${GROUPS.find(g=>g.id===s.gid).emoji}</i>`).join('')}</span>`;
+  renderDaily();
+  if (daily.play.revealed) dailyShowResult(false);
+  else $('dResult').classList.add('hidden');
+}
+function renderDaily(){
+  if (dragOn || !daily || !daily.play) return;
+  const p=daily.play;
+  setH($('dBoard'), boardHTML(p), daily.num+':'+daily.i);
+  const full=!p.placed.includes(-1);
+  $('dCheck').disabled=!full||p.revealed; $('dClear').disabled=p.revealed;
+  dailySave();
+}
+function dailyShowResult(fresh){
+  const p=daily.play, n=scoreOf(p.cat,p.placed);
+  if (fresh){ daily.res[daily.i]=n; }
+  $('dScore').textContent = n===10 ? '★ 10 / 10' : `${n} / 10`;
+  $('dMsg').textContent = n===10 ? 'Perfect pyramid!' : n>=7 ? 'Brilliant ranking.' : n>=4 ? 'Solid effort.' : 'Tough one. On to the next.';
+  $('dNext').textContent = daily.i+1<daily.set.length ? `Next: ${GROUPS.find(g=>g.id===daily.set[daily.i+1].gid).emoji} round ${daily.i+2}` : 'See my score';
+  $('dResult').classList.remove('hidden');
+  $('dResult').classList.toggle('perfect', n===10);
+}
+$('dBoard').addEventListener('click',e=>{ if (daily && daily.play) boardClick(daily.play,e,renderDaily); });
+enableDrag($('dBoard'), ()=>daily&&daily.play, renderDaily);
+$('dClear').addEventListener('click',()=>{ daily.play.placed.fill(-1); daily.play.sel=null; renderDaily(); });
+$('dCheck').addEventListener('click',()=>{ const p=daily.play; p.revealed=true; p.sel=null; p.last=-1; renderDaily(); dailyShowResult(true); dailySave(); });
+$('dNext').addEventListener('click',()=>{ daily.i++; dailySave(); if (daily.i>=daily.set.length) dailySummary(); else dailyRound(null); window.scrollTo({top:0,behavior:'smooth'}); });
+function dailyShareText(){
+  const total=daily.res.reduce((a,b)=>a+(b||0),0);
+  const line=daily.set.map((s,k)=>`${GROUPS.find(g=>g.id===s.gid).emoji} ${daily.res[k]===10?'★':daily.res[k]??'-'}`).join('  ');
+  return `Top Ten Pyramid · Daily #${daily.num}\n${total}/${daily.set.length*10}\n${line}`;
+}
+function dailySummary(){
+  $('dPlay').classList.add('hidden'); $('dSum').classList.remove('hidden');
+  const total=daily.res.reduce((a,b)=>a+(b||0),0), max=daily.set.length*10;
+  $('dHead').innerHTML=`<span class="dnum">Daily #${daily.num}</span><span>Finished</span>`;
+  $('dTotal').textContent=`${total} / ${max}`;
+  $('dVerdict').textContent = total>=50 ? 'Pyramid royalty.' : total>=40 ? 'Seriously good.' : total>=25 ? 'Not bad at all.' : 'Tomorrow is a new pyramid.';
+  $('dRows').innerHTML=daily.set.map((s,k)=>{ const g=GROUPS.find(x=>x.id===s.gid); return `<li><span class="emo">${g.emoji}</span><span class="n">${esc(s.cat.t)}</span><b>${daily.res[k]===10?'★ 10':daily.res[k]??'–'}</b></li>`; }).join('');
+  const t=new Date(), next=new Date(t.getFullYear(), t.getMonth(), t.getDate()+1), hrs=Math.max(1,Math.ceil((next-t)/36e5));
+  $('dNextIn').textContent=`A new set of six lists arrives at midnight (in about ${hrs} hour${hrs===1?'':'s'}).`;
+}
+$('dShare').addEventListener('click',async()=>{
+  const txt=dailyShareText();
+  try{ if (navigator.share) { await navigator.share({text:txt}); return; } }catch(e){ return; }
+  try{ await navigator.clipboard.writeText(txt); $('dShare').textContent='Copied!'; setTimeout(()=>$('dShare').textContent='Share my score',1800); }
+  catch(e){ $('dShareTxt').textContent=txt; $('dShareTxt').classList.remove('hidden'); }
+});
+$('dailyNum').textContent = `Daily #${dailyNumber()}`;
+
 /* ---------- half-time mini-game content ---------- */
 const MG_LIST = [
   {id:'spot',   name:'Spot the Difference', color:'#b9a6f5', rule:'Two pictures on the TV. Tap the 3 changes on your phone. First to find all 3 wins.'},
-  {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. Most correct wins; fastest breaks a tie.'},
-  {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins.'},
+  {id:'five',   name:'10-Second Challenge', color:'#e6d27a', rule:'Name 3 things in 10 seconds. First to get all 3 right wins on the spot; otherwise most correct wins. A tie goes to sudden death.'},
+  {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins; a tie goes to sudden death.'},
   {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'A 5-second clip of a massive hit plays on the TV. Type the song and the artist. First correct answer wins.'},
-  {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember.'},
+  {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 12 seconds. Then type as many as you remember. Get all 15 to win on the spot; a tie goes to sudden death.'},
   {id:'who',    name:'Who Am I?',           color:'#f2a97e', rule:'Clues appear one by one, hardest first. First correct guess wins.'},
-  {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins.'}
+  {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins; if the last players go out together, sudden death decides.'}
 ];
 
 const L_COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda|antigua','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina|bosnia','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Canada','Cape Verde|cabo verde','Central African Republic|car','Chad','Chile','China','Colombia','Comoros','Congo|republic of the congo','DR Congo|drc|democratic republic of the congo','Costa Rica','Croatia','Cuba','Cyprus','Czechia|czech republic','Denmark','Djibouti','Dominica','Dominican Republic','East Timor|timor leste','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini|swaziland','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland|republic of ireland|eire','Israel','Italy','Ivory Coast|cote divoire','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar|burma','Namibia','Nauru','Nepal','Netherlands|holland','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia|macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis|st kitts','Saint Lucia|st lucia','Saint Vincent and the Grenadines|st vincent','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea|korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Togo','Tonga','Trinidad and Tobago|trinidad','Tunisia','Turkey|turkiye','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates|uae','United Kingdom|uk|great britain|britain','United States|usa|us|america','Uruguay','Uzbekistan','Vanuatu','Vatican City|vatican','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','England','Scotland','Wales','Northern Ireland'];
@@ -2689,6 +2912,38 @@ const WHO = [
   {n:'Shrek', a:['shrek'], c:['I live alone in a swamp.','My best friend is a talking donkey.','I married Princess Fiona.','I say ogres are like onions.','I\'m a big green ogre.']},
   {n:'Gordon Ramsay', a:['gordon ramsay','ramsay'], c:['I was born in Johnstone, Scotland, in 1966.','I played youth football for Rangers.','My restaurants have earned many Michelin stars.','I host Hell\'s Kitchen.','I\'m a famously sweary TV chef.']},
   {n:'Michael Jackson', a:['michael jackson','mj','jackson'], c:['I was born in Gary, Indiana, in 1958.','I started out singing with my brothers.','I released the best-selling album of all time.','I made the moonwalk famous.','I\'m known as the King of Pop.']}
+];
+
+/* Sudden death: when a mini-game ends level, the tied players guess a number and the closest wins */
+const SD_QS = [
+  ['In what year did the Titanic sink?', 1912, ''],
+  ['How many bones are in an adult human body?', 206, 'bones'],
+  ['How tall is the Eiffel Tower, in metres?', 330, 'm'],
+  ['In what year did the first iPhone go on sale?', 2007, ''],
+  ['How many keys are on a standard piano?', 88, 'keys'],
+  ['How many minutes are there in a day?', 1440, 'minutes'],
+  ['How tall is Mount Everest, in metres?', 8849, 'm'],
+  ['In what year did the Berlin Wall fall?', 1989, ''],
+  ['How many Premier League goals did Alan Shearer score?', 260, 'goals'],
+  ['How many episodes of Friends were made?', 236, 'episodes'],
+  ['How far away is the Moon, in kilometres (on average)?', 384400, 'km'],
+  ['How many countries are members of the United Nations?', 193, 'countries'],
+  ['At what temperature does water boil, in Fahrenheit?', 212, '°F'],
+  ['In what year did Elvis Presley die?', 1977, ''],
+  ['How many people does Wembley Stadium hold?', 90000, 'people'],
+  ['How many floors does the Burj Khalifa have?', 163, 'floors'],
+  ['How many years did Queen Elizabeth II reign?', 70, 'years'],
+  ['How many seconds are there in an hour?', 3600, 'seconds'],
+  ['In what year did the Channel Tunnel open?', 1994, ''],
+  ['How long is a marathon, in metres?', 42195, 'm'],
+  ['How many dots are there on a pair of dice?', 42, 'dots'],
+  ['In what year was Google founded?', 1998, ''],
+  ['How many James Bond films have Eon made (up to No Time to Die)?', 25, 'films'],
+  ['How many days are there in a leap year?', 366, 'days'],
+  ['How many miles long is the River Thames?', 215, 'miles'],
+  ['In what year did the first Harry Potter book come out?', 1997, ''],
+  ['How many Grammys has Beyoncé won (up to 2026)?', 35, 'Grammys'],
+  ['How many squares are on a chessboard?', 64, 'squares'],
 ];
 
 /* ---------- PeerJS fallback: online play outside claude.ai (e.g. GitHub Pages) ----------
@@ -2905,6 +3160,7 @@ window.__pyrTest = {
   review: () => G && G.L.mg ? JSON.parse(JSON.stringify({rev:G.L.mg.rev||null, rv:G.L.mg.rv||null})) : null,
   state: () => G ? JSON.parse(JSON.stringify({phase:G.phase, round:G.round, scores:G.scores, vote:G.vote, tb:G.tb, mg:G.mg})) : null,
   cheat: () => { if(!G||!G.mg) return null; const m=G.mg;
+    if (m.st==='sd') return SD_QS[m.sd.q];
     if (m.g==='spot') return spotScene(m.seed).diffs;
     if (m.g==='five') return FIVE_PROMPTS[m.q].l.slice(0,3).map(x=>x.split('|')[0]);
     if (m.g==='song') return G.L.mg.song ? [G.L.mg.song.t, G.L.mg.song.a, m.mode] : null;
@@ -2989,15 +3245,16 @@ function resolveVote(){
   if (max===0) return startTheme(pickR(G.vote.o));
   const tied=G.vote.o.filter(c=>v[c].length===max);
   if (tied.length===1) return startTheme(tied[0]);
-  const [a,b]=shuffle(tied).slice(0,2), pa=pickR(v[a]), pb=pickR(v[b]);
+  // one random voter from every tied theme plays: 2, 3 or more players at the table
+  const ps=tied.map(c=>pickR(v[c]));
   G.L.deck=freshDeck();
-  G.tb={c:[a,b], p:[pa,pb], av:[findP(pa)?.av||AVATARS[0].id, findP(pb)?.av||AVATARS[0].id], h:[[],[]], s:['play','play'], w:-1, m:'', hand:1};
+  G.tb={c:tied.slice(), co:tied.slice(), p:ps, av:ps.map(n=>findP(n)?.av||AVATARS[0].id), h:ps.map(()=>[]), s:ps.map(()=>'play'), w:-1, m:'', hand:1};
   dealTB();
   G.phase='tb'; pub();
 }
 function dealTB(){
-  if (G.L.deck.length<12) G.L.deck=freshDeck();
-  G.tb.h=[[G.L.deck.pop(),G.L.deck.pop()],[G.L.deck.pop(),G.L.deck.pop()]];
+  if (G.L.deck.length<G.tb.p.length*6) G.L.deck=freshDeck();
+  G.tb.h=G.tb.p.map(()=>[G.L.deck.pop(),G.L.deck.pop()]);
   G.tb.s=G.tb.h.map(h=>bjVal(h)===21?'stand':'play'); G.tb.w=-1;
   G.L.seen=G.tb.p.map(n=>{ const p=findP(n); return p&&p.p.bj&&p.p.bj.r===G.round ? p.p.bj.n : 0; });
   G.dl=now()+60000;
@@ -3079,7 +3336,29 @@ function reviewConfirm(){
   const res=L.rev.map(r=>({name:r.name,t:r.t,n:r.items.filter(i=>i.ok).length,items:r.items})).sort((a,b)=>b.n-a.n||a.t-b.t);
   m.res=res.slice(0,12).map(r=>[r.name,r.n]);
   if (m.g==='five' && res[0]) m.wa=res[0].items.slice(0,3).map(i=>[i.txt,i.ok]);
-  return res[0]&&res[0].n>0 ? mgWin(res[0].name) : mgNoWinner();
+  if (!res[0] || res[0].n<=0) return mgNoWinner();
+  return winOrSD(res.filter(r=>r.n===res[0].n).map(r=>r.name));
+}
+/* ----- sudden death: tied players guess a number, closest wins (then fastest) ----- */
+function winOrSD(names){ names=[...new Set(names)]; return names.length===1 ? mgWin(names[0]) : startSD(names); }
+function startSD(names){
+  const m=G.mg; G.L.sdUsed=G.L.sdUsed||[];
+  let pool=[...SD_QS.keys()].filter(i=>!G.L.sdUsed.includes(i)); if (!pool.length){ G.L.sdUsed=[]; pool=[...SD_QS.keys()]; }
+  const q=pickR(pool); G.L.sdUsed.push(q);
+  m.sd={q, p:names.slice(0,8), res:null}; m.st='sd'; G.L.sdAns={}; G.dl=now()+25000; pub();
+}
+function sdStep(t, P){
+  const m=G.mg, sd=m.sd, A=G.L.sdAns;
+  if (sd.res){ if (t>G.dl) mgWin(sd.res.w); return; }
+  for (const p of P){ const x=mgOf(p); if (!x || x.sd===undefined || x.sdq!==sd.q) continue;
+    if (!sd.p.some(n=>n.toLowerCase()===p.key) || A[p.key]) continue;
+    const v=Number(x.sd); if (Number.isFinite(v)) A[p.key]={name:p.name, v, t}; }
+  const answered=Object.values(A);
+  if (answered.length<sd.p.length && t<=G.dl) return;
+  const ans=SD_QS[sd.q][1];
+  const ranked=answered.sort((a,b)=>Math.abs(a.v-ans)-Math.abs(b.v-ans) || a.t-b.t);
+  const w = ranked[0] ? ranked[0].name : pickR(sd.p); // nobody answered: a coin toss
+  sd.res={w, a:ans, g:ranked.map(r=>[r.name,r.v])}; G.dl=t+5000; pub();
 }
 function reviewAccept(i){ const L=G.L.mg; if(!L||!L.rv||!L.rv.cand[i]) return; mgWin(L.rv.cand[i].name); }
 $('hX').addEventListener('click',e=>{
@@ -3213,16 +3492,20 @@ function hostStep(){
       });
       if (t>G.dl){ tb.s=tb.s.map(s=>s==='play'?'stand':s); ch=true; }
       if (tb.s.every(s=>s!=='play')){
-        const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h));
-        if (v[0]===v[1]){ tb.w=-2; tb.m= v[0]<0 ? 'Both bust! Dealing again…' : `Push on ${v[0]}! Dealing again…`; G.L.redeal=t+3000; }
-        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; sfx.chime(); }
+        const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h)), best=Math.max(...v), top=v.map((x,i)=>x===best?i:-1).filter(i=>i>=0);
+        if (top.length>1){ // a tie at the top (or everyone bust): the tied players play another hand
+          tb.w=-2; tb.m = best<0 ? 'Everyone bust! Dealing again…' : `${top.map(i=>tb.p[i]).join(' and ')} tie on ${best}! Dealing again…`;
+          G.L.keep=best<0 ? null : top; G.L.redeal=t+3000; }
+        else { tb.w=top[0]; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; sfx.chime(); }
         ch=true;
       }
     } else if (tb.w===-2){
-      if (t>G.L.redeal){ tb.hand++; tb.m=''; dealTB(); ch=true; }
+      if (t>G.L.redeal){
+        if (G.L.keep){ const k=G.L.keep; tb.p=k.map(i=>tb.p[i]); tb.c=k.map(i=>tb.c[i]); tb.av=k.map(i=>tb.av[i]); G.L.keep=null; }
+        tb.hand++; tb.m=''; dealTB(); ch=true; }
     } else {
       const p=findP(tb.p[tb.w]), k=p&&p.p.pick;
-      if (k && k.g===G.gid && tb.c.includes(k.c)) return startTheme(k.c);
+      if (k && k.g===G.gid && tb.co.includes(k.c)) return startTheme(k.c);
       if (t>G.dl) return startTheme(tb.c[tb.w]);
     }
     if (ch) pub();
@@ -3240,6 +3523,7 @@ function mgStep(t, P){
   if (m.st==='spin'){ if (t>G.L.mgAt){ m.st='intro'; G.dl=t+8000; pub(); } return; }
   if (m.st==='intro'){ if (t>G.dl) mgStart(); return; }
   if (m.st==='done') return;
+  if (m.st==='sd') return sdStep(t, P);
   if (m.g==='spot'){
     let ch=false;
     for (const p of P){ const x=mgOf(p); if(!x || !Array.isArray(x.f)) continue;
@@ -3250,7 +3534,7 @@ function mgStep(t, P){
       if (found>=3){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); return mgWin(p.name); }
     }
     if (ch){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); pub(); }
-    if (t>G.dl){ const best=Object.values(L.prog).sort((a,b)=>b.n-a.n||a.t-b.t)[0]; return best&&best.n>0 ? mgWin(best.name) : mgNoWinner(); }
+    if (t>G.dl){ const all=Object.values(L.prog).filter(x=>x.n>0), top=Math.max(0,...all.map(x=>x.n)); return top>0 ? winOrSD(all.filter(x=>x.n===top).map(x=>x.name)) : mgNoWinner(); }
   }
   else if (m.g==='five'){
     if (m.st==='ready'){ if (t>G.dl){ m.st='play'; G.dl=t+10000; L.end=t+11500; pub(); } return; }
@@ -3258,6 +3542,11 @@ function mgStep(t, P){
     for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.a) || t>L.end) continue;
       const a=x.a.slice(0,3).map(s=>cleanText(s,30)), prev=L.ans[p.key];
       if (!prev || prev.a.join('|')!==a.join('|')) L.ans[p.key]={name:p.name,a,t};
+    }
+    if (m.st==='play'){ // the first player with three right answers wins straight away
+      const list=FIVE_PROMPTS[m.q].l;
+      const done=Object.values(L.ans).filter(r=>{ const seen=new Set(); return r.a.filter(Boolean).every(txt=>{ const i=listHit(list,txt); if(i<0||seen.has(i)) return false; seen.add(i); return true; }) && r.a.filter(Boolean).length===3; }).sort((a,b)=>a.t-b.t);
+      if (done.length){ m.wa=done[0].a.map(x=>[x,true]); return mgWin(done[0].name); }
     }
     if (m.st==='play' && t>G.dl){ m.st='grace'; }
     if (t>L.end){
@@ -3285,7 +3574,9 @@ function mgStep(t, P){
       if ((P.length && voters>=canVote) || t>G.dl){
         const max=Math.max(...vc); m.vc=vc;
         if (max===0) return mgNoWinner();
-        const wi=vc.indexOf(max); m.wi=wi; return mgWin(L.names[wi]);
+        const tops=vc.map((c,i)=>c===max?i:-1).filter(i=>i>=0);
+        if (tops.length===1){ m.wi=tops[0]; return mgWin(L.names[tops[0]]); }
+        m.wis=tops; return startSD(tops.map(i=>L.names[i]));
       }
     }
   }
@@ -3307,6 +3598,10 @@ function mgStep(t, P){
     for (const p of P){ const x=mgOf(p); if (x && x.s && !L.sub[p.key]) L.sub[p.key]=t; }
     const subN=P.filter(p=>L.sub[p.key]).length;
     if (m.st==='review') return;
+    { const items=memItems(m.seed); // all 15 remembered: game over, they win
+      for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.w)||x.w.length<items.length) continue;
+        const got=new Set(); x.w.slice(0,40).forEach(w=>{ const hit=items.find(i=>fuzzyHit(cleanText(w,30), MEMORY_ITEMS[i][1].split('|').map(normA))); if(hit!==undefined) got.add(hit); });
+        if (got.size>=items.length){ m.res=[[p.name,got.size]]; return mgWin(p.name); } } }
     if ((P.length && subN===P.length) || t>G.dl){
       const items=memItems(m.seed); L.rev=[];
       for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.w)) continue;
@@ -3342,9 +3637,10 @@ function mgStep(t, P){
       if (m.alive.length===1) return mgWin(m.alive[0]);
       if (m.alive.length===0){
         const tried=L.prevAlive.filter(n=>L.prevAns[n.toLowerCase()]).sort((x,y)=>L.prevAns[x.toLowerCase()].t-L.prevAns[y.toLowerCase()].t);
-        return (m.n>0 && L.prevAlive.length) ? mgWin(tried[0]||L.prevAlive[0]) : (tried[0] ? mgWin(tried[0]) : mgNoWinner());
+        if (!tried.length) return L.prevAlive.length ? winOrSD(L.prevAlive) : mgNoWinner();
+        return winOrSD(tried);
       }
-      if (m.n>=24){ return mgWin(pickR(m.alive)); }
+      if (m.n>=24){ return winOrSD(m.alive); }
       m.n++; m.s++;
       if (m.s+1>=m.ch.length){ const c=hlChain(Math.random, m.c); m.c=c.c; m.ch=c.ch; m.s=0; }
       L.ans={}; m.st='ask'; G.dl=t+15000; pub();
@@ -3353,6 +3649,17 @@ function mgStep(t, P){
 }
 
 /* ----- host rendering ----- */
+const qrCache={};
+function qrDataUrl(url){ // the same QR as the lobby, as an image for other screens
+  if (qrCache[url]) return qrCache[url];
+  try{
+    const q=new QRLIB.QRCode(-1,QRLIB.ECL.M); q.addData(url); q.make();
+    const n=q.getModuleCount(), sc=8, b=2, W=(n+2*b)*sc, cv=document.createElement('canvas'); cv.width=cv.height=W; const g=cv.getContext('2d');
+    g.fillStyle='#fff'; g.fillRect(0,0,W,W); g.fillStyle='#0e1016';
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) g.fillRect((c+b)*sc,(r+b)*sc,sc,sc);
+    return qrCache[url]=cv.toDataURL('image/png');
+  }catch(e){ return ''; }
+}
 function drawQr(code){
   const el=$('hQr'); el.innerHTML=''; el.classList.remove('hidden');
   const url=joinUrl(code); $('hUrl').textContent=url;
@@ -3366,6 +3673,11 @@ function drawQr(code){
   }catch(e){ el.classList.add('hidden'); }
 }
 const lbSorted = () => lbSort(G.scores);
+// after the podium: invite new players for the next game with the same code
+function nextGameJoin(){
+  const url=joinUrl(G.code), img=qrDataUrl(url);
+  return `<div class="panel nextjoin"><div>${img?`<img class="nqr" src="${img}" alt="QR code to join the next game">`:''}</div><div><h3>Want in on the next game?</h3><p>Scan the code or go to <b>${esc(url.split('#')[0].replace(/^https?:\/\//,''))}</b>, tap Join a game and enter</p><div class="code nbig">${esc(G.code)}</div><p class="sub">Everyone already here stays in. ${G.ctlName?esc(G.ctlName)+' can press Play again on their phone.':'Press Play again to start.'}</p></div></div>`;
+}
 // shows lock-in time only where it decides a tie
 function speedTag(lb, i){ const s=lb[i]; return lb.some((o,j)=>j!==i && o[1]===s[1]) ? `<em class="spd">⚡ ${(+s[4]||0).toFixed(1)}s</em>` : ''; }
 function wheelSVG(){
@@ -3443,8 +3755,8 @@ function renderX(lb){
   }
   else if (ph==='tb'){
     const tb=G.tb;
-    h = tvHead('Tie! Blackjack decides', `${esc(themeName(tb.c[0]))} vs ${esc(themeName(tb.c[1]))}`)
-      + `<div class="bj">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(themeName(tb.c[i]))}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
+    h = tvHead(`Tie! ${tb.p.length>2?tb.p.length+'-way blackjack':'Blackjack'} decides`, tb.co.map(c=>esc(themeName(c))).join(' vs '))
+      + `<div class="bj n${tb.p.length}">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(themeName(tb.c[i]))}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
       + `<p class="hint big2">${esc(tb.m||`Hand ${tb.hand}: closest to 21 without going bust wins.`)}</p>`;
   }
   else if (ph==='half'){
@@ -3455,7 +3767,8 @@ function renderX(lb){
   else if (ph==='final'){
     const top=lb.slice(0,3), order=[1,0,2].filter(i=>top[i]);
     h = `<div class="cat"><h2>Final standings</h2><p>Thanks for playing Top Ten Pyramid.</p></div><div class="podium">${order.map(i=>`<div class="pod p${i+1}">${avatarSVG(avOk(top[i][3]))}<b>${esc(cleanName(top[i][0]))}</b><span>${top[i][1]} pts</span><div class="step">${i+1}</div></div>`).join('')}</div>`
-      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,speedTag(lb,i),'',i+3)).join('')}</ol>${lb.some((s,i)=>speedTag(lb,i))?'<p class="hint">⚡ Level on points: the faster total lock-in time ranks higher.</p>':''}</div>`;
+      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,speedTag(lb,i),'',i+3)).join('')}</ol>${lb.some((s,i)=>speedTag(lb,i))?'<p class="hint">⚡ Level on points: the faster total lock-in time ranks higher.</p>':''}</div>`
+      + nextGameJoin();
   }
   setH(el, h, `${ph}|${m?m.id+m.st+(m.s??'')+'.'+(m.n??''):''}|${G.tb&&ph==='tb'?G.tb.hand+':'+G.tb.w:''}`);
   if (key){ // start the spin on the freshly drawn wheel
@@ -3467,12 +3780,21 @@ function renderX(lb){
 function winnerBanner(m){
   return m.win ? `<div class="winner">${avatarSVG(avOk(m.wav))}<div><b>${esc(m.win)}</b> wins ${esc(MG_LIST.find(x=>x.id===m.g).name)}!</div><span>+${MG_POINTS}</span></div>` : `<div class="winner none">No winner this time.</div>`;
 }
+const sdFmt = (v, unit) => unit ? Number(v).toLocaleString('en-GB') : String(v); // years without a comma
+function sdTV(m){
+  const sd=m.sd, q=SD_QS[sd.q], A=G.L.sdAns||{};
+  let h=`<p class="hint big2">⚡ Sudden death! ${esc(sd.p.join(' and '))} are tied. Closest guess wins.</p><div class="bigq">${esc(q[0])}</div>`;
+  if (sd.res) h+=`<p class="hint big2">Answer: <b>${sdFmt(q[1],q[2])}${q[2]?' '+esc(q[2]):''}</b></p><ol class="entries">${sd.res.g.map(([n,v])=>`<li class="${n===sd.res.w?'win':''}"><span>${esc(n)}</span><b>${sdFmt(v,q[2])}</b></li>`).join('')}</ol>${sd.res.g.length?'':`<p class="hint">Nobody answered, so a coin toss picked ${esc(sd.res.w)}.</p>`}`;
+  else h+=`<div class="players">${sd.p.map(n=>chip(n,findP(n)?.av||AVATARS[0].id,A[n.toLowerCase()]?'done':'')).join('')}</div><p class="hint">Type a number on your phone.</p>`;
+  return h;
+}
 function renderMgTV(m, lb){
   const info=MG_LIST.find(x=>x.id===m.g);
   if (m.st==='spin') return tvHead('Spinning…', 'Which mini-game will it be?') + wheelSVG();
   if (m.st==='intro') return `<div class="intro" style="--c:${info.color}"><div class="lbl">Half-time mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p><div class="timer" id="xTimer"></div></div>`;
   let h=tvHead(esc(info.name), '');
   if (m.st==='review') return h + reviewHTML(m);
+  if (m.st==='sd') return h + sdTV(m);
   if (m.g==='spot'){
     const sc=spotScene(m.seed);
     h += `<div class="scenes">${sceneSVG(sc.base,{label:'Original'})}${sceneSVG(sc.changed,{label:'Changed',found:m.st==='done'?sc.diffs:[]})}</div>`
@@ -3912,6 +4234,11 @@ function buildX(h){
     else if (m.st==='intro') s=`<div class="intro" style="--c:${info.color}"><div class="lbl">Mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p></div>`;
     else if (m.st==='done') s='<div id="pxDyn"></div>';
     else if (m.st==='review') s = isCtl() ? head('Host check','You decide the close calls. Everyone sees the result on the TV.')+'<div id="pxDyn"></div>' : `<div class="wait"><div class="big">Checking answers…</div><p>${h.ctl?esc(h.ctl)+' (the host)':'The host'} is checking the close calls. Watch the TV.</p></div>`;
+    else if (m.st==='sd'){
+      const inIt=m.sd.p.some(n=>n.toLowerCase()===me.name.toLowerCase());
+      s = inIt ? head('⚡ Sudden death!',"You're tied for the win. Closest guess takes it.")+`<div class="bigq">${esc(SD_QS[m.sd.q][0])}</div><div class="row" style="justify-content:center"><input id="sdI" type="number" inputmode="decimal" placeholder="Your guess" style="flex:1 1 180px"><button class="go" type="button" data-act="sdGo">Lock in</button></div><div id="pxDyn"></div>`
+               : `<div class="wait"><div class="big">⚡ Sudden death!</div><p>${esc(m.sd.p.join(' vs '))} are tied. Watch the TV.</p></div><div id="pxDyn"></div>`;
+    }
     else s=head(esc(info.name),'')+mgPhoneBuild(m)+'<div id="pxDyn"></div>';
   }
   setH($('jX'), s, me.key); enterAnim($('jX'));
@@ -3948,19 +4275,24 @@ function updateX(h){
   else if (h.phase==='tb'){
     const i=tb.p.findIndex(n=>n.toLowerCase()===meK);
     const hand=(k)=>`<div class="bjp${tb.w===k?' win':''}"><div class="bjn">${avatarSVG(avOk(tb.av[k]))}<b>${esc(tb.p[k])}</b></div><div class="cards">${tb.h[k].map(cardHTML).join('')}</div><div class="bjv">${tb.s[k]==='bust'?'Bust!':bjVal(tb.h[k])}</div></div>`;
-    if (i<0){ d.innerHTML=`<p class="hint big2">${esc(tb.p[0])} vs ${esc(tb.p[1])} at blackjack. Watch the TV!</p><div class="bj ph">${hand(0)}<div class="vs">VS</div>${hand(1)}</div><p class="hint">${esc(tb.m||'')}</p>`; return; }
-    const o=1-i;
+    if (i<0){ d.innerHTML=`<p class="hint big2">${tb.p.map(esc).join(' vs ')} at blackjack. Watch the TV!</p><div class="bj ph">${tb.p.map((_,k)=>hand(k)).join('<div class="vs">VS</div>')}</div><p class="hint">${esc(tb.m||'')}</p>`; return; }
+    const others=tb.p.filter((_,k)=>k!==i), oNames=others.length>1 ? others.slice(0,-1).join(', ')+' and '+others.slice(-1) : others[0];
     let act='';
     if (tb.w===-1 && tb.s[i]==='play') act=`<div class="bar"><button class="go" type="button" data-bj="hit">Hit</button><button class="ghost" type="button" data-bj="stand">Stand</button></div>`;
-    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the theme:</p><div class="vopts">${tb.c.map(gid=>`<button type="button" class="vopt" data-pick="${gid}">${esc(themeName(gid))}</button>`).join('')}</div>`;
+    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the theme:</p><div class="vopts">${tb.co.map(gid=>`<button type="button" class="vopt" data-pick="${gid}">${esc(themeName(gid))}</button>`).join('')}</div>`;
     else if (tb.w>=0) act=`<p class="hint big2">${esc(tb.p[tb.w])} won and is picking the theme.</p>`;
     else if (tb.w===-2) act=`<p class="hint big2">${esc(tb.m)}</p>`;
-    else act=`<p class="hint">You stand. Waiting for ${esc(tb.p[o])}…</p>`;
-    d.innerHTML=`<p class="hint">You're playing for <b>${esc(themeName(tb.c[i]))}</b>. Get closer to 21 than ${esc(tb.p[o])} without going bust.</p><div class="bj ph">${hand(i)}<div class="vs">VS</div>${hand(o)}</div>${act}`;
+    else act=`<p class="hint">You stand. Waiting for ${esc(oNames)}…</p>`;
+    d.innerHTML=`<p class="hint">You're playing for <b>${esc(themeName(tb.c[i]))}</b>. Get closer to 21 than ${esc(oNames)} without going bust.</p><div class="bj ph">${hand(i)}${tb.p.map((_,k)=>k===i?'':'<div class="vs">VS</div>'+hand(k)).join('')}</div>${act}`;
   }
   else if (h.phase==='reveal'){ d.innerHTML=`<div class="wait"><div class="big">Round over</div><p>Check the TV for the answers.</p></div>`; }
   else if (h.phase==='mg' && m){
     if (m.st==='review'){ d.innerHTML=phoneReviewHTML(h.rv); return; }
+    if (m.st==='sd'){
+      const r=m.sd.res; if (r){ d.innerHTML=`<p class="hint big2">Answer: <b>${sdFmt(r.a, SD_QS[m.sd.q][2])}</b></p><p class="hint big2">${r.w.toLowerCase()===meK?'🏆 You win!':esc(r.w)+' wins!'}</p>`; return; }
+      d.innerHTML = me.mgP && me.mgP.sdq===m.sd.q ? `<p class="hint big2">Locked in: ${esc(String(me.mgP.sd))}</p>` : '';
+      if (me.mgP && me.mgP.sdq===m.sd.q){ const i=$('sdI'), b=$('jX').querySelector('[data-act="sdGo"]'); if(i) i.disabled=true; if(b) b.disabled=true; }
+      return; }
     if (m.st==='done'){
       const won=m.win && m.win.toLowerCase()===meK;
       d.innerHTML=`<div class="wait"><div class="big">${won?`You win! +${MG_POINTS}`:m.win?`${esc(m.win)} wins!`:'No winner this time'}</div><p>${won?'Nice one.':'Watch the TV for round 4.'}</p></div>`;
@@ -4000,6 +4332,7 @@ $('jX').addEventListener('click',e=>{
     updateX(h); return;
   }
   const act=t.closest('[data-act]')?.dataset.act;
+  if (act==='sdGo'){ const v=Number($('sdI').value); if ($('sdI').value==='' || !Number.isFinite(v)) return; me.mgP.sd=v; me.mgP.sdq=h.mg.sd.q; sendMg(); updateX(h); return; }
   if (act==='finSend'){ const tx=cleanText($('finT').value); if(!tx) return; me.mgP.t=tx; me.mgP.s=true; $('finT').disabled=true; t.disabled=true; sendMg(); updateX(h); return; }
   const fv=t.closest('[data-fv]'); if (fv){ me.mgP.v=+fv.dataset.fv; sendMg(); updateX(h); return; }
   if (act==='sgGo') return songGuess();
@@ -4121,6 +4454,7 @@ function kicked(){
 function route(){
   const m=/^#join-([a-z]{4})$/i.exec(location.hash||'');
   if (m) { openJoin(m[1]); return true; }
+  if (/^#daily$/i.test(location.hash||'')) { startDaily(); return true; }
   return false;
 }
 window.addEventListener('hashchange',route);

@@ -124,6 +124,7 @@ window.__pyrTest = {
   review: () => G && G.L.mg ? JSON.parse(JSON.stringify({rev:G.L.mg.rev||null, rv:G.L.mg.rv||null})) : null,
   state: () => G ? JSON.parse(JSON.stringify({phase:G.phase, round:G.round, scores:G.scores, vote:G.vote, tb:G.tb, mg:G.mg})) : null,
   cheat: () => { if(!G||!G.mg) return null; const m=G.mg;
+    if (m.st==='sd') return SD_QS[m.sd.q];
     if (m.g==='spot') return spotScene(m.seed).diffs;
     if (m.g==='five') return FIVE_PROMPTS[m.q].l.slice(0,3).map(x=>x.split('|')[0]);
     if (m.g==='song') return G.L.mg.song ? [G.L.mg.song.t, G.L.mg.song.a, m.mode] : null;
@@ -208,15 +209,16 @@ function resolveVote(){
   if (max===0) return startTheme(pickR(G.vote.o));
   const tied=G.vote.o.filter(c=>v[c].length===max);
   if (tied.length===1) return startTheme(tied[0]);
-  const [a,b]=shuffle(tied).slice(0,2), pa=pickR(v[a]), pb=pickR(v[b]);
+  // one random voter from every tied theme plays: 2, 3 or more players at the table
+  const ps=tied.map(c=>pickR(v[c]));
   G.L.deck=freshDeck();
-  G.tb={c:[a,b], p:[pa,pb], av:[findP(pa)?.av||AVATARS[0].id, findP(pb)?.av||AVATARS[0].id], h:[[],[]], s:['play','play'], w:-1, m:'', hand:1};
+  G.tb={c:tied.slice(), co:tied.slice(), p:ps, av:ps.map(n=>findP(n)?.av||AVATARS[0].id), h:ps.map(()=>[]), s:ps.map(()=>'play'), w:-1, m:'', hand:1};
   dealTB();
   G.phase='tb'; pub();
 }
 function dealTB(){
-  if (G.L.deck.length<12) G.L.deck=freshDeck();
-  G.tb.h=[[G.L.deck.pop(),G.L.deck.pop()],[G.L.deck.pop(),G.L.deck.pop()]];
+  if (G.L.deck.length<G.tb.p.length*6) G.L.deck=freshDeck();
+  G.tb.h=G.tb.p.map(()=>[G.L.deck.pop(),G.L.deck.pop()]);
   G.tb.s=G.tb.h.map(h=>bjVal(h)===21?'stand':'play'); G.tb.w=-1;
   G.L.seen=G.tb.p.map(n=>{ const p=findP(n); return p&&p.p.bj&&p.p.bj.r===G.round ? p.p.bj.n : 0; });
   G.dl=now()+60000;
@@ -298,7 +300,29 @@ function reviewConfirm(){
   const res=L.rev.map(r=>({name:r.name,t:r.t,n:r.items.filter(i=>i.ok).length,items:r.items})).sort((a,b)=>b.n-a.n||a.t-b.t);
   m.res=res.slice(0,12).map(r=>[r.name,r.n]);
   if (m.g==='five' && res[0]) m.wa=res[0].items.slice(0,3).map(i=>[i.txt,i.ok]);
-  return res[0]&&res[0].n>0 ? mgWin(res[0].name) : mgNoWinner();
+  if (!res[0] || res[0].n<=0) return mgNoWinner();
+  return winOrSD(res.filter(r=>r.n===res[0].n).map(r=>r.name));
+}
+/* ----- sudden death: tied players guess a number, closest wins (then fastest) ----- */
+function winOrSD(names){ names=[...new Set(names)]; return names.length===1 ? mgWin(names[0]) : startSD(names); }
+function startSD(names){
+  const m=G.mg; G.L.sdUsed=G.L.sdUsed||[];
+  let pool=[...SD_QS.keys()].filter(i=>!G.L.sdUsed.includes(i)); if (!pool.length){ G.L.sdUsed=[]; pool=[...SD_QS.keys()]; }
+  const q=pickR(pool); G.L.sdUsed.push(q);
+  m.sd={q, p:names.slice(0,8), res:null}; m.st='sd'; G.L.sdAns={}; G.dl=now()+25000; pub();
+}
+function sdStep(t, P){
+  const m=G.mg, sd=m.sd, A=G.L.sdAns;
+  if (sd.res){ if (t>G.dl) mgWin(sd.res.w); return; }
+  for (const p of P){ const x=mgOf(p); if (!x || x.sd===undefined || x.sdq!==sd.q) continue;
+    if (!sd.p.some(n=>n.toLowerCase()===p.key) || A[p.key]) continue;
+    const v=Number(x.sd); if (Number.isFinite(v)) A[p.key]={name:p.name, v, t}; }
+  const answered=Object.values(A);
+  if (answered.length<sd.p.length && t<=G.dl) return;
+  const ans=SD_QS[sd.q][1];
+  const ranked=answered.sort((a,b)=>Math.abs(a.v-ans)-Math.abs(b.v-ans) || a.t-b.t);
+  const w = ranked[0] ? ranked[0].name : pickR(sd.p); // nobody answered: a coin toss
+  sd.res={w, a:ans, g:ranked.map(r=>[r.name,r.v])}; G.dl=t+5000; pub();
 }
 function reviewAccept(i){ const L=G.L.mg; if(!L||!L.rv||!L.rv.cand[i]) return; mgWin(L.rv.cand[i].name); }
 $('hX').addEventListener('click',e=>{
@@ -432,16 +456,20 @@ function hostStep(){
       });
       if (t>G.dl){ tb.s=tb.s.map(s=>s==='play'?'stand':s); ch=true; }
       if (tb.s.every(s=>s!=='play')){
-        const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h));
-        if (v[0]===v[1]){ tb.w=-2; tb.m= v[0]<0 ? 'Both bust! Dealing again…' : `Push on ${v[0]}! Dealing again…`; G.L.redeal=t+3000; }
-        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; sfx.chime(); }
+        const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h)), best=Math.max(...v), top=v.map((x,i)=>x===best?i:-1).filter(i=>i>=0);
+        if (top.length>1){ // a tie at the top (or everyone bust): the tied players play another hand
+          tb.w=-2; tb.m = best<0 ? 'Everyone bust! Dealing again…' : `${top.map(i=>tb.p[i]).join(' and ')} tie on ${best}! Dealing again…`;
+          G.L.keep=best<0 ? null : top; G.L.redeal=t+3000; }
+        else { tb.w=top[0]; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; sfx.chime(); }
         ch=true;
       }
     } else if (tb.w===-2){
-      if (t>G.L.redeal){ tb.hand++; tb.m=''; dealTB(); ch=true; }
+      if (t>G.L.redeal){
+        if (G.L.keep){ const k=G.L.keep; tb.p=k.map(i=>tb.p[i]); tb.c=k.map(i=>tb.c[i]); tb.av=k.map(i=>tb.av[i]); G.L.keep=null; }
+        tb.hand++; tb.m=''; dealTB(); ch=true; }
     } else {
       const p=findP(tb.p[tb.w]), k=p&&p.p.pick;
-      if (k && k.g===G.gid && tb.c.includes(k.c)) return startTheme(k.c);
+      if (k && k.g===G.gid && tb.co.includes(k.c)) return startTheme(k.c);
       if (t>G.dl) return startTheme(tb.c[tb.w]);
     }
     if (ch) pub();
@@ -459,6 +487,7 @@ function mgStep(t, P){
   if (m.st==='spin'){ if (t>G.L.mgAt){ m.st='intro'; G.dl=t+8000; pub(); } return; }
   if (m.st==='intro'){ if (t>G.dl) mgStart(); return; }
   if (m.st==='done') return;
+  if (m.st==='sd') return sdStep(t, P);
   if (m.g==='spot'){
     let ch=false;
     for (const p of P){ const x=mgOf(p); if(!x || !Array.isArray(x.f)) continue;
@@ -469,7 +498,7 @@ function mgStep(t, P){
       if (found>=3){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); return mgWin(p.name); }
     }
     if (ch){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); pub(); }
-    if (t>G.dl){ const best=Object.values(L.prog).sort((a,b)=>b.n-a.n||a.t-b.t)[0]; return best&&best.n>0 ? mgWin(best.name) : mgNoWinner(); }
+    if (t>G.dl){ const all=Object.values(L.prog).filter(x=>x.n>0), top=Math.max(0,...all.map(x=>x.n)); return top>0 ? winOrSD(all.filter(x=>x.n===top).map(x=>x.name)) : mgNoWinner(); }
   }
   else if (m.g==='five'){
     if (m.st==='ready'){ if (t>G.dl){ m.st='play'; G.dl=t+10000; L.end=t+11500; pub(); } return; }
@@ -477,6 +506,11 @@ function mgStep(t, P){
     for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.a) || t>L.end) continue;
       const a=x.a.slice(0,3).map(s=>cleanText(s,30)), prev=L.ans[p.key];
       if (!prev || prev.a.join('|')!==a.join('|')) L.ans[p.key]={name:p.name,a,t};
+    }
+    if (m.st==='play'){ // the first player with three right answers wins straight away
+      const list=FIVE_PROMPTS[m.q].l;
+      const done=Object.values(L.ans).filter(r=>{ const seen=new Set(); return r.a.filter(Boolean).every(txt=>{ const i=listHit(list,txt); if(i<0||seen.has(i)) return false; seen.add(i); return true; }) && r.a.filter(Boolean).length===3; }).sort((a,b)=>a.t-b.t);
+      if (done.length){ m.wa=done[0].a.map(x=>[x,true]); return mgWin(done[0].name); }
     }
     if (m.st==='play' && t>G.dl){ m.st='grace'; }
     if (t>L.end){
@@ -504,7 +538,9 @@ function mgStep(t, P){
       if ((P.length && voters>=canVote) || t>G.dl){
         const max=Math.max(...vc); m.vc=vc;
         if (max===0) return mgNoWinner();
-        const wi=vc.indexOf(max); m.wi=wi; return mgWin(L.names[wi]);
+        const tops=vc.map((c,i)=>c===max?i:-1).filter(i=>i>=0);
+        if (tops.length===1){ m.wi=tops[0]; return mgWin(L.names[tops[0]]); }
+        m.wis=tops; return startSD(tops.map(i=>L.names[i]));
       }
     }
   }
@@ -526,6 +562,10 @@ function mgStep(t, P){
     for (const p of P){ const x=mgOf(p); if (x && x.s && !L.sub[p.key]) L.sub[p.key]=t; }
     const subN=P.filter(p=>L.sub[p.key]).length;
     if (m.st==='review') return;
+    { const items=memItems(m.seed); // all 15 remembered: game over, they win
+      for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.w)||x.w.length<items.length) continue;
+        const got=new Set(); x.w.slice(0,40).forEach(w=>{ const hit=items.find(i=>fuzzyHit(cleanText(w,30), MEMORY_ITEMS[i][1].split('|').map(normA))); if(hit!==undefined) got.add(hit); });
+        if (got.size>=items.length){ m.res=[[p.name,got.size]]; return mgWin(p.name); } } }
     if ((P.length && subN===P.length) || t>G.dl){
       const items=memItems(m.seed); L.rev=[];
       for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.w)) continue;
@@ -561,9 +601,10 @@ function mgStep(t, P){
       if (m.alive.length===1) return mgWin(m.alive[0]);
       if (m.alive.length===0){
         const tried=L.prevAlive.filter(n=>L.prevAns[n.toLowerCase()]).sort((x,y)=>L.prevAns[x.toLowerCase()].t-L.prevAns[y.toLowerCase()].t);
-        return (m.n>0 && L.prevAlive.length) ? mgWin(tried[0]||L.prevAlive[0]) : (tried[0] ? mgWin(tried[0]) : mgNoWinner());
+        if (!tried.length) return L.prevAlive.length ? winOrSD(L.prevAlive) : mgNoWinner();
+        return winOrSD(tried);
       }
-      if (m.n>=24){ return mgWin(pickR(m.alive)); }
+      if (m.n>=24){ return winOrSD(m.alive); }
       m.n++; m.s++;
       if (m.s+1>=m.ch.length){ const c=hlChain(Math.random, m.c); m.c=c.c; m.ch=c.ch; m.s=0; }
       L.ans={}; m.st='ask'; G.dl=t+15000; pub();
@@ -572,6 +613,17 @@ function mgStep(t, P){
 }
 
 /* ----- host rendering ----- */
+const qrCache={};
+function qrDataUrl(url){ // the same QR as the lobby, as an image for other screens
+  if (qrCache[url]) return qrCache[url];
+  try{
+    const q=new QRLIB.QRCode(-1,QRLIB.ECL.M); q.addData(url); q.make();
+    const n=q.getModuleCount(), sc=8, b=2, W=(n+2*b)*sc, cv=document.createElement('canvas'); cv.width=cv.height=W; const g=cv.getContext('2d');
+    g.fillStyle='#fff'; g.fillRect(0,0,W,W); g.fillStyle='#0e1016';
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) g.fillRect((c+b)*sc,(r+b)*sc,sc,sc);
+    return qrCache[url]=cv.toDataURL('image/png');
+  }catch(e){ return ''; }
+}
 function drawQr(code){
   const el=$('hQr'); el.innerHTML=''; el.classList.remove('hidden');
   const url=joinUrl(code); $('hUrl').textContent=url;
@@ -585,6 +637,11 @@ function drawQr(code){
   }catch(e){ el.classList.add('hidden'); }
 }
 const lbSorted = () => lbSort(G.scores);
+// after the podium: invite new players for the next game with the same code
+function nextGameJoin(){
+  const url=joinUrl(G.code), img=qrDataUrl(url);
+  return `<div class="panel nextjoin"><div>${img?`<img class="nqr" src="${img}" alt="QR code to join the next game">`:''}</div><div><h3>Want in on the next game?</h3><p>Scan the code or go to <b>${esc(url.split('#')[0].replace(/^https?:\/\//,''))}</b>, tap Join a game and enter</p><div class="code nbig">${esc(G.code)}</div><p class="sub">Everyone already here stays in. ${G.ctlName?esc(G.ctlName)+' can press Play again on their phone.':'Press Play again to start.'}</p></div></div>`;
+}
 // shows lock-in time only where it decides a tie
 function speedTag(lb, i){ const s=lb[i]; return lb.some((o,j)=>j!==i && o[1]===s[1]) ? `<em class="spd">⚡ ${(+s[4]||0).toFixed(1)}s</em>` : ''; }
 function wheelSVG(){
@@ -662,8 +719,8 @@ function renderX(lb){
   }
   else if (ph==='tb'){
     const tb=G.tb;
-    h = tvHead('Tie! Blackjack decides', `${esc(themeName(tb.c[0]))} vs ${esc(themeName(tb.c[1]))}`)
-      + `<div class="bj">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(themeName(tb.c[i]))}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
+    h = tvHead(`Tie! ${tb.p.length>2?tb.p.length+'-way blackjack':'Blackjack'} decides`, tb.co.map(c=>esc(themeName(c))).join(' vs '))
+      + `<div class="bj n${tb.p.length}">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(themeName(tb.c[i]))}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
       + `<p class="hint big2">${esc(tb.m||`Hand ${tb.hand}: closest to 21 without going bust wins.`)}</p>`;
   }
   else if (ph==='half'){
@@ -674,7 +731,8 @@ function renderX(lb){
   else if (ph==='final'){
     const top=lb.slice(0,3), order=[1,0,2].filter(i=>top[i]);
     h = `<div class="cat"><h2>Final standings</h2><p>Thanks for playing Top Ten Pyramid.</p></div><div class="podium">${order.map(i=>`<div class="pod p${i+1}">${avatarSVG(avOk(top[i][3]))}<b>${esc(cleanName(top[i][0]))}</b><span>${top[i][1]} pts</span><div class="step">${i+1}</div></div>`).join('')}</div>`
-      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,speedTag(lb,i),'',i+3)).join('')}</ol>${lb.some((s,i)=>speedTag(lb,i))?'<p class="hint">⚡ Level on points: the faster total lock-in time ranks higher.</p>':''}</div>`;
+      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,speedTag(lb,i),'',i+3)).join('')}</ol>${lb.some((s,i)=>speedTag(lb,i))?'<p class="hint">⚡ Level on points: the faster total lock-in time ranks higher.</p>':''}</div>`
+      + nextGameJoin();
   }
   setH(el, h, `${ph}|${m?m.id+m.st+(m.s??'')+'.'+(m.n??''):''}|${G.tb&&ph==='tb'?G.tb.hand+':'+G.tb.w:''}`);
   if (key){ // start the spin on the freshly drawn wheel
@@ -686,12 +744,21 @@ function renderX(lb){
 function winnerBanner(m){
   return m.win ? `<div class="winner">${avatarSVG(avOk(m.wav))}<div><b>${esc(m.win)}</b> wins ${esc(MG_LIST.find(x=>x.id===m.g).name)}!</div><span>+${MG_POINTS}</span></div>` : `<div class="winner none">No winner this time.</div>`;
 }
+const sdFmt = (v, unit) => unit ? Number(v).toLocaleString('en-GB') : String(v); // years without a comma
+function sdTV(m){
+  const sd=m.sd, q=SD_QS[sd.q], A=G.L.sdAns||{};
+  let h=`<p class="hint big2">⚡ Sudden death! ${esc(sd.p.join(' and '))} are tied. Closest guess wins.</p><div class="bigq">${esc(q[0])}</div>`;
+  if (sd.res) h+=`<p class="hint big2">Answer: <b>${sdFmt(q[1],q[2])}${q[2]?' '+esc(q[2]):''}</b></p><ol class="entries">${sd.res.g.map(([n,v])=>`<li class="${n===sd.res.w?'win':''}"><span>${esc(n)}</span><b>${sdFmt(v,q[2])}</b></li>`).join('')}</ol>${sd.res.g.length?'':`<p class="hint">Nobody answered, so a coin toss picked ${esc(sd.res.w)}.</p>`}`;
+  else h+=`<div class="players">${sd.p.map(n=>chip(n,findP(n)?.av||AVATARS[0].id,A[n.toLowerCase()]?'done':'')).join('')}</div><p class="hint">Type a number on your phone.</p>`;
+  return h;
+}
 function renderMgTV(m, lb){
   const info=MG_LIST.find(x=>x.id===m.g);
   if (m.st==='spin') return tvHead('Spinning…', 'Which mini-game will it be?') + wheelSVG();
   if (m.st==='intro') return `<div class="intro" style="--c:${info.color}"><div class="lbl">Half-time mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p><div class="timer" id="xTimer"></div></div>`;
   let h=tvHead(esc(info.name), '');
   if (m.st==='review') return h + reviewHTML(m);
+  if (m.st==='sd') return h + sdTV(m);
   if (m.g==='spot'){
     const sc=spotScene(m.seed);
     h += `<div class="scenes">${sceneSVG(sc.base,{label:'Original'})}${sceneSVG(sc.changed,{label:'Changed',found:m.st==='done'?sc.diffs:[]})}</div>`
@@ -1131,6 +1198,11 @@ function buildX(h){
     else if (m.st==='intro') s=`<div class="intro" style="--c:${info.color}"><div class="lbl">Mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(mgRule(m))}</p></div>`;
     else if (m.st==='done') s='<div id="pxDyn"></div>';
     else if (m.st==='review') s = isCtl() ? head('Host check','You decide the close calls. Everyone sees the result on the TV.')+'<div id="pxDyn"></div>' : `<div class="wait"><div class="big">Checking answers…</div><p>${h.ctl?esc(h.ctl)+' (the host)':'The host'} is checking the close calls. Watch the TV.</p></div>`;
+    else if (m.st==='sd'){
+      const inIt=m.sd.p.some(n=>n.toLowerCase()===me.name.toLowerCase());
+      s = inIt ? head('⚡ Sudden death!',"You're tied for the win. Closest guess takes it.")+`<div class="bigq">${esc(SD_QS[m.sd.q][0])}</div><div class="row" style="justify-content:center"><input id="sdI" type="number" inputmode="decimal" placeholder="Your guess" style="flex:1 1 180px"><button class="go" type="button" data-act="sdGo">Lock in</button></div><div id="pxDyn"></div>`
+               : `<div class="wait"><div class="big">⚡ Sudden death!</div><p>${esc(m.sd.p.join(' vs '))} are tied. Watch the TV.</p></div><div id="pxDyn"></div>`;
+    }
     else s=head(esc(info.name),'')+mgPhoneBuild(m)+'<div id="pxDyn"></div>';
   }
   setH($('jX'), s, me.key); enterAnim($('jX'));
@@ -1167,19 +1239,24 @@ function updateX(h){
   else if (h.phase==='tb'){
     const i=tb.p.findIndex(n=>n.toLowerCase()===meK);
     const hand=(k)=>`<div class="bjp${tb.w===k?' win':''}"><div class="bjn">${avatarSVG(avOk(tb.av[k]))}<b>${esc(tb.p[k])}</b></div><div class="cards">${tb.h[k].map(cardHTML).join('')}</div><div class="bjv">${tb.s[k]==='bust'?'Bust!':bjVal(tb.h[k])}</div></div>`;
-    if (i<0){ d.innerHTML=`<p class="hint big2">${esc(tb.p[0])} vs ${esc(tb.p[1])} at blackjack. Watch the TV!</p><div class="bj ph">${hand(0)}<div class="vs">VS</div>${hand(1)}</div><p class="hint">${esc(tb.m||'')}</p>`; return; }
-    const o=1-i;
+    if (i<0){ d.innerHTML=`<p class="hint big2">${tb.p.map(esc).join(' vs ')} at blackjack. Watch the TV!</p><div class="bj ph">${tb.p.map((_,k)=>hand(k)).join('<div class="vs">VS</div>')}</div><p class="hint">${esc(tb.m||'')}</p>`; return; }
+    const others=tb.p.filter((_,k)=>k!==i), oNames=others.length>1 ? others.slice(0,-1).join(', ')+' and '+others.slice(-1) : others[0];
     let act='';
     if (tb.w===-1 && tb.s[i]==='play') act=`<div class="bar"><button class="go" type="button" data-bj="hit">Hit</button><button class="ghost" type="button" data-bj="stand">Stand</button></div>`;
-    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the theme:</p><div class="vopts">${tb.c.map(gid=>`<button type="button" class="vopt" data-pick="${gid}">${esc(themeName(gid))}</button>`).join('')}</div>`;
+    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the theme:</p><div class="vopts">${tb.co.map(gid=>`<button type="button" class="vopt" data-pick="${gid}">${esc(themeName(gid))}</button>`).join('')}</div>`;
     else if (tb.w>=0) act=`<p class="hint big2">${esc(tb.p[tb.w])} won and is picking the theme.</p>`;
     else if (tb.w===-2) act=`<p class="hint big2">${esc(tb.m)}</p>`;
-    else act=`<p class="hint">You stand. Waiting for ${esc(tb.p[o])}…</p>`;
-    d.innerHTML=`<p class="hint">You're playing for <b>${esc(themeName(tb.c[i]))}</b>. Get closer to 21 than ${esc(tb.p[o])} without going bust.</p><div class="bj ph">${hand(i)}<div class="vs">VS</div>${hand(o)}</div>${act}`;
+    else act=`<p class="hint">You stand. Waiting for ${esc(oNames)}…</p>`;
+    d.innerHTML=`<p class="hint">You're playing for <b>${esc(themeName(tb.c[i]))}</b>. Get closer to 21 than ${esc(oNames)} without going bust.</p><div class="bj ph">${hand(i)}${tb.p.map((_,k)=>k===i?'':'<div class="vs">VS</div>'+hand(k)).join('')}</div>${act}`;
   }
   else if (h.phase==='reveal'){ d.innerHTML=`<div class="wait"><div class="big">Round over</div><p>Check the TV for the answers.</p></div>`; }
   else if (h.phase==='mg' && m){
     if (m.st==='review'){ d.innerHTML=phoneReviewHTML(h.rv); return; }
+    if (m.st==='sd'){
+      const r=m.sd.res; if (r){ d.innerHTML=`<p class="hint big2">Answer: <b>${sdFmt(r.a, SD_QS[m.sd.q][2])}</b></p><p class="hint big2">${r.w.toLowerCase()===meK?'🏆 You win!':esc(r.w)+' wins!'}</p>`; return; }
+      d.innerHTML = me.mgP && me.mgP.sdq===m.sd.q ? `<p class="hint big2">Locked in: ${esc(String(me.mgP.sd))}</p>` : '';
+      if (me.mgP && me.mgP.sdq===m.sd.q){ const i=$('sdI'), b=$('jX').querySelector('[data-act="sdGo"]'); if(i) i.disabled=true; if(b) b.disabled=true; }
+      return; }
     if (m.st==='done'){
       const won=m.win && m.win.toLowerCase()===meK;
       d.innerHTML=`<div class="wait"><div class="big">${won?`You win! +${MG_POINTS}`:m.win?`${esc(m.win)} wins!`:'No winner this time'}</div><p>${won?'Nice one.':'Watch the TV for round 4.'}</p></div>`;
@@ -1219,6 +1296,7 @@ $('jX').addEventListener('click',e=>{
     updateX(h); return;
   }
   const act=t.closest('[data-act]')?.dataset.act;
+  if (act==='sdGo'){ const v=Number($('sdI').value); if ($('sdI').value==='' || !Number.isFinite(v)) return; me.mgP.sd=v; me.mgP.sdq=h.mg.sd.q; sendMg(); updateX(h); return; }
   if (act==='finSend'){ const tx=cleanText($('finT').value); if(!tx) return; me.mgP.t=tx; me.mgP.s=true; $('finT').disabled=true; t.disabled=true; sendMg(); updateX(h); return; }
   const fv=t.closest('[data-fv]'); if (fv){ me.mgP.v=+fv.dataset.fv; sendMg(); updateX(h); return; }
   if (act==='sgGo') return songGuess();
