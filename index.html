@@ -1,0 +1,3202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top Ten Pyramid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: a late-night game show: quiet, confident, a little playful.
+IDEA: a pyramid of moonstones under a starry midnight sky; every answer is shown, players set each stone in its ranked place.
+PICTURE: the pyramid itself, 4-3-2-1 moon-white stones, rank 1 at the apex, with a soft moon glow behind.
+COLOUR and TYPE: Midnight palette: near-black navy, moon white, lavender accent, blue/teal/green/peach; Inter Tight + Inter, JetBrains Mono for codes.
+LAYOUT: home with three doors (solo, host, join); play screen is title, pyramid, tray, action bar; TV screen adds code, QR and leaderboard.
+*/
+:root{color-scheme:light dark;
+--bg:#161a24;--bg2:#0b0c11;--panel:#151923;--panel2:#1d2230;
+--ink:#e9eaf0;--muted:#a3a9b7;
+--sand:#e3e5ec;--sandHi:#f5f6f9;--sandLo:#8e95a6;--stoneInk:#12141b;
+--acc:#b9a6f5;--accHi:#cdbffa;--blue:#8ab4f8;--teal:#72d0cc;
+--empty:rgba(255,255,255,.045);--edge:rgba(255,255,255,.14);
+--coral:#f2a97e;--ok:#a6d9a0;--gold:#b9a6f5}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{background:var(--bg2)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.75;background-image:radial-gradient(1.2px 1.2px at 7% 12%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 18% 34%,#fff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 29% 8%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 41% 22%,#cfd3ff 50%,transparent 51%),radial-gradient(1.1px 1.1px at 55% 6%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 63% 31%,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 72% 44%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 86% 9%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 93% 27%,#cfd3ff 50%,transparent 51%),radial-gradient(1px 1px at 12% 58%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 34% 71%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 48% 52%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 67% 78%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 81% 63%,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 96% 82%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 4% 90%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 24% 95%,#cfd3ff 50%,transparent 51%),radial-gradient(1px 1px at 58% 92%,#fff 50%,transparent 51%)}
+.moon{position:absolute;top:-6px;right:0;width:clamp(70px,10vw,120px);height:auto;filter:drop-shadow(0 0 28px rgba(185,166,245,.35));pointer-events:none}
+.top{position:relative}
+.wrap{position:relative;z-index:1}
+.top:has(#homeBtn:not(.hidden)) .moon{right:170px;width:clamp(56px,7vw,84px)}
+@media(max-width:600px){.top:has(#homeBtn:not(.hidden)) .moon{display:none}.moon{width:56px}}
+body{margin:0;background:radial-gradient(40% 35% at 78% 14%,rgba(120,110,190,.18),transparent 70%),radial-gradient(130% 80% at 50% 0%,var(--bg) 0%,var(--bg2) 100%) fixed;color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip;min-height:100vh}
+.wrap{max-width:1040px;margin:0 auto;padding:clamp(18px,3.5vw,40px) max(4vw,14px) 48px}
+h1,h2,h3{font-family:"Inter Tight",Inter,sans-serif;font-weight:800;letter-spacing:-.02em;margin:0;text-wrap:balance;line-height:1.08}
+h1{font-size:clamp(30px,5vw,46px)}
+h2{font-size:clamp(22px,3.4vw,32px);color:var(--sandHi)}
+h3{font-size:20px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.sub{color:var(--muted);margin:6px 0 0}
+button,select,input{font:inherit;font-size:16px}
+button{min-height:46px;padding:0 18px;border-radius:12px;border:0;cursor:pointer;font-weight:700;color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.go{background:var(--acc);color:#15121f}.go:hover:not(:disabled){background:var(--accHi)}
+.ghost{background:transparent;border:1px solid var(--edge)}.ghost:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.link{background:none;min-height:40px;padding:0 6px;color:var(--muted);text-decoration:underline}
+select,input{min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--edge);background:var(--panel);color:var(--ink);max-width:100%}
+input::placeholder{color:var(--muted)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:14px;color:var(--muted)}
+.hidden{display:none!important}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+
+/* home */
+.doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.door{background:linear-gradient(180deg,rgba(29,34,48,.85),rgba(21,25,35,.85));border:1px solid var(--edge);border-radius:18px;padding:22px;text-align:left;min-height:190px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;color:var(--ink)}
+.door:hover{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 10px 40px -12px rgba(185,166,245,.45)}
+.door .ic{width:54px;height:44px}
+.door b{font:800 22px/1.1 "Inter Tight",Inter,sans-serif;color:var(--ink)}
+.door span{color:var(--muted);font-weight:400;font-size:15px}
+.hero{display:flex;justify-content:center;margin:8px 0 0}
+@media(max-width:760px){.doors{grid-template-columns:1fr}.door{min-height:0}}
+
+/* picker */
+.groups{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.groups button{min-height:42px;padding:0 15px;border-radius:99px;background:rgba(255,255,255,.07);border:1px solid var(--edge);font-weight:600}
+.groups button[aria-pressed=true]{background:var(--acc);color:#15121f;border-color:var(--acc)}
+.pick{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.pick select{flex:1 1 260px}
+
+/* board */
+.cat{text-align:center;margin:6px 0 2px}
+.cat p{margin:4px 0 0;color:var(--muted);font-size:15px}
+.pyr{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:16px;--w:min(180px,calc((100% - 24px)/4))}
+.pyr .r{display:flex;gap:8px;justify-content:center;width:100%}
+.slot{width:var(--w);min-height:80px;border-radius:7px;padding:16px 6px 7px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:var(--empty);border:1.5px dashed var(--edge);position:relative;color:var(--ink);font-weight:700}
+button.slot:disabled,.chip:disabled{opacity:1;cursor:default}
+button.slot:hover:not(:disabled){border-color:var(--sand);background:rgba(255,255,255,.12)}
+.slot .rk{position:absolute;top:5px;left:8px;font:800 13px/1 "Inter Tight",Inter,sans-serif;opacity:.65}
+.slot .nm{font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.slot .st{font-size:12.5px;font-weight:400;opacity:.85;margin-top:2px}
+.slot .ans{font-size:12px;font-weight:600;margin-top:3px}
+.slot.full{border:0;box-shadow:0 0 22px -6px rgba(200,205,255,.35);background:linear-gradient(180deg,var(--sandHi) 0 4px,var(--sand) 4px 84%,var(--sandLo) 84%);color:var(--stoneInk);box-shadow:0 5px 0 rgba(0,0,0,.25)}
+.slot.sel,.chip.sel{outline:3px solid var(--gold);outline-offset:2px}
+.slot.right{background:linear-gradient(180deg,#d6f0d2 0 4px,var(--ok) 4px 84%,#6a9e65 84%);color:#10230f}
+.slot.wrong{background:linear-gradient(180deg,#f9d5c0 0 4px,var(--coral) 4px 84%,#bf7a52 84%);color:#2e1508}
+.slot.wrong .nm{text-decoration:line-through;text-decoration-thickness:2px}
+.slot.drop{animation:drop .35s ease-out}
+@keyframes drop{0%{transform:translateY(-14px);opacity:.3}100%{transform:none;opacity:1}}
+.ground{height:14px;width:min(780px,100%);margin:6px auto 0;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent)}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px auto 0;max-width:820px;min-height:52px;padding:10px;border-radius:14px;background:rgba(21,25,35,.7);border:1px solid rgba(255,255,255,.05)}
+.tray.empty::after{content:"All stones placed. Tap a stone to move it.";color:var(--muted);font-size:14px;align-self:center}
+.chip{min-height:46px;padding:6px 14px;border-radius:10px;background:linear-gradient(180deg,var(--sandHi) 0 3px,var(--sand) 3px);color:var(--stoneInk);font-weight:700;box-shadow:0 3px 0 var(--sandLo),0 0 18px -8px rgba(200,205,255,.5)}
+.chip:hover{filter:brightness(1.06)}
+.hint{text-align:center;color:var(--muted);font-size:14px;margin:10px 0 0;min-height:21px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px auto 0}
+.banner{margin:16px auto 0;max-width:640px;text-align:center;padding:16px;border-radius:14px;background:rgba(21,25,35,.85);border:1px solid rgba(255,255,255,.06)}
+.banner .big{font:800 clamp(28px,5vw,44px)/1 "Inter Tight",Inter,sans-serif;color:var(--gold)}
+.banner p{margin:6px 0 0;color:var(--muted)}
+
+/* online */
+.notice{max-width:640px;margin:14px auto;padding:14px 16px;border-radius:12px;background:rgba(255,107,74,.14);border:1px solid rgba(255,107,74,.4);font-size:15px}
+.lobby{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start;margin-top:8px}
+.codebox{background:rgba(21,25,35,.82);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:22px;text-align:center}
+.codebox .lbl{color:var(--muted);font-size:15px}
+.code{font:700 clamp(54px,9vw,96px)/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;color:var(--acc);margin:6px 0 10px}
+.qr{display:inline-block;padding:12px;background:#fff;border-radius:14px;line-height:0}
+.qr img,.qr canvas{width:min(220px,60vw)!important;height:auto!important}
+.url{font-size:13px;color:var(--muted);overflow-wrap:anywhere;margin-top:10px}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.pl{padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-weight:600}
+.pl.done{background:var(--ok);color:#10230f}
+.pl.done::after{content:" ✓"}
+.panel{background:rgba(21,25,35,.82);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
+.panel+.panel{margin-top:14px}
+.board-lb{list-style:none;margin:8px 0 0;padding:0;counter-reset:lb}
+.board-lb li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.06);margin-bottom:6px;counter-increment:lb}
+.board-lb li::before{content:counter(lb);font-family:"Inter Tight",Inter,sans-serif;font-weight:800;width:1.6em;color:var(--acc)}
+.board-lb li .n{flex:1}
+.board-lb li .s{font-weight:700;white-space:nowrap}
+.board-lb li .s em{font-style:normal;color:var(--ok);font-weight:600;margin-left:6px}
+.board-lb li.me{outline:2px solid var(--gold)}
+.mini{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;color:var(--muted)}
+.mini b{color:var(--acc);font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:21px;letter-spacing:.04em}
+.timer{font-variant-numeric:tabular-nums;font:800 34px/1 "Inter Tight",Inter,sans-serif;color:var(--blue);text-align:center;margin-top:8px}
+.timer.low{color:var(--coral)}
+.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:16px auto 0;max-width:900px}
+.answers div{padding:12px 14px;border-radius:10px;background:var(--sand);color:var(--stoneInk);font-weight:700;text-align:center;box-shadow:0 4px 0 var(--sandLo)}
+.answers div.bad{background:var(--coral);box-shadow:0 4px 0 #bf7a52;text-decoration:line-through}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--edge)}
+.wait{text-align:center;padding:40px 10px}
+.wait .big{font:800 clamp(26px,5vw,40px)/1.1 "Inter Tight",Inter,sans-serif;color:var(--sandHi)}
+.wait p{color:var(--muted)}
+@media(max-width:760px){.lobby{grid-template-columns:1fr}}
+@media(max-width:600px){.slot{min-height:70px;padding:15px 3px 5px}.slot .nm{font-size:13px}.slot .st{display:none}.chip{font-size:15px;padding:6px 11px}.groups button{padding:0 12px;font-size:15px}}
+
+/* avatars */
+.avgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:6px}
+.avgrid button{min-height:0;padding:6px 2px 4px;border-radius:12px;background:rgba(255,255,255,.06);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.avgrid button svg{width:100%;max-width:62px;height:auto}
+.avgrid button[aria-pressed=true]{border-color:var(--acc);background:rgba(185,166,245,.16);color:var(--ink)}
+.pl{display:inline-flex;align-items:center;gap:6px}
+.pl svg,.board-lb svg,.mini svg{width:30px;height:30px;flex:none}
+.pl{padding:4px 14px 4px 5px}
+.board-lb li{align-items:center}
+.board-lb li .n{display:flex;align-items:center;gap:8px}
+body.tv .pl svg,body.tv .board-lb svg{width:44px;height:44px}
+/* character animations */
+.av *{transform-box:fill-box;transform-origin:center}
+.av .blink{animation:avBlink 4.2s infinite}
+.av .bob{animation:avBob 2.6s ease-in-out infinite}
+.av .breathe{animation:avBreathe 3.6s ease-in-out infinite;transform-origin:50% 100%}
+.av .sway{animation:avSway 3.4s ease-in-out infinite;transform-origin:50% 100%}
+.av .nod{animation:avNod 1.1s ease-in-out infinite}
+.av .jitter{animation:avJitter .5s steps(2) infinite}
+.av .swing{animation:avSwing 2.4s ease-in-out infinite;transform-origin:50% 100%}
+.av .wobble{animation:avWobble 2.2s ease-in-out infinite}
+.av .kick{animation:avKick 1.4s cubic-bezier(.3,0,.5,1) infinite}
+.av .bounce{animation:avKick 1.1s cubic-bezier(.3,0,.5,1) infinite}
+.av .thumb{animation:avThumb 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.av .sparkle{animation:avSparkle 2.2s ease-in-out infinite}
+.av .zzz{animation:avZzz 3s ease-in-out infinite}
+.av .led{animation:avLed 1.2s steps(2) infinite}
+.av .ember{animation:avEmber 1.6s ease-in-out infinite}
+.av .smoke{animation:avSmoke 3s ease-in infinite}
+.av .smoke.s2{animation-delay:1.4s}
+.av .bubble{animation:avBubble 3.2s ease-in-out infinite;transform-origin:50% 20%}
+.av .pupils{animation:avShifty 2.4s ease-in-out infinite}
+.av .sweat{animation:avSweat 1.8s ease-in infinite}
+.av .glint{animation:avGlint 2.6s ease-in-out infinite}
+.av .chain{animation:avChain 1.1s ease-in-out infinite;transform-origin:50% 0}
+.av .swish{animation:avSwish 2.2s ease-in infinite}
+@keyframes avBlink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.12)}}
+@keyframes avBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+@keyframes avBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.97)}}
+@keyframes avSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes avNod{0%,100%{transform:translateY(0)}40%{transform:translateY(2.4px)}}
+@keyframes avJitter{0%{transform:translateX(-.6px)}100%{transform:translateX(.6px)}}
+@keyframes avSwing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes avWobble{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-2px)}}
+@keyframes avKick{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px) rotate(180deg)}}
+@keyframes avThumb{0%,70%,100%{transform:rotate(0)}80%{transform:rotate(-12deg)}90%{transform:rotate(6deg)}}
+@keyframes avSparkle{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1)}}
+@keyframes avZzz{0%{opacity:0;transform:translate(-4px,6px)}30%{opacity:1}100%{opacity:0;transform:translate(4px,-6px)}}
+@keyframes avLed{0%{opacity:1}100%{opacity:.2}}
+@keyframes avEmber{0%,100%{opacity:.75}50%{opacity:1;filter:brightness(1.3)}}
+@keyframes avSmoke{0%{opacity:0;transform:translateY(4px)}25%{opacity:.9}100%{opacity:0;transform:translate(3px,-10px)}}
+@keyframes avBubble{0%,15%{transform:scale(.25)}70%{transform:scale(1.15)}78%{transform:scale(1.2);opacity:1}82%,100%{transform:scale(.25);opacity:0}}
+@keyframes avShifty{0%,20%{transform:translateX(0)}35%,55%{transform:translateX(2.4px)}70%,90%{transform:translateX(-2.4px)}100%{transform:translateX(0)}}
+@keyframes avSweat{0%{opacity:0;transform:translateY(-2px)}20%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
+@keyframes avGlint{0%,60%,100%{opacity:0}75%{opacity:1}}
+@keyframes avChain{0%,100%{transform:rotate(0)}40%{transform:rotate(3deg) translateY(1.5px)}}
+@keyframes avSwish{0%{transform:translateY(-14px);opacity:0}25%{opacity:1}70%{transform:translateY(10px);opacity:1}100%{transform:translateY(16px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.av *{animation:none!important}}
+
+/* game-night screens */
+.card{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:54px;height:76px;border-radius:8px;background:#fff;color:#1d130d;font:800 22px/1 "Inter Tight",Inter,sans-serif;box-shadow:0 3px 0 rgba(0,0,0,.3);margin:3px}
+.card i{font-style:normal;font-size:20px;margin-top:4px}
+.card.red{color:#d0566b}
+.bj{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:14px}
+.bjp{background:rgba(21,25,35,.85);border-radius:16px;padding:14px 16px;min-width:240px;text-align:center;border:2px solid transparent}
+.bjp.win{border-color:var(--acc);background:rgba(185,166,245,.14)}
+.bjn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:18px}
+.bjn svg{width:44px;height:44px}
+.bjc{color:var(--muted);font-size:14px;margin:2px 0 8px}
+.bjv{font:800 22px/1 "Inter Tight",Inter,sans-serif;color:var(--sandHi);margin-top:8px}
+.bj.ph .bjp{min-width:0;flex:1 1 140px;padding:10px}
+.bj.ph .card{width:42px;height:60px;font-size:17px}
+.vs{font:800 22px/1 "Inter Tight",Inter,sans-serif;color:var(--acc)}
+.big2{font-size:18px;color:var(--ink)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px auto 0;max-width:1100px}
+.opt{background:rgba(21,25,35,.85);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px}
+.opt-g{color:var(--acc);font-size:13px;font-weight:700}
+.opt-t{font:800 19px/1.15 "Inter Tight",Inter,sans-serif;margin:4px 0 10px;text-wrap:balance}
+.opt-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.opt-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--blue));transition:width .4s}
+.opt-v{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:8px;min-height:34px}
+.opt-v svg{width:30px;height:30px}
+.opt-v b{margin-left:auto;font:800 22px/1 "Inter Tight",Inter,sans-serif;color:var(--sandHi)}
+.vopts{display:grid;gap:10px;margin:14px auto 0;max-width:520px}
+.vopt{min-height:58px;text-align:left;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.08);border:2px solid var(--edge);font-size:17px;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.vopt small{color:var(--acc);font-size:12.5px;font-weight:700}
+.vopt[aria-pressed=true]{background:var(--acc);color:#15121f;border-color:var(--acc)}
+.vopt[aria-pressed=true] small{color:var(--stoneInk)}
+.vopt.mine{opacity:.6;font-weight:600}
+.wheelwrap{display:flex;justify-content:center;margin-top:10px}
+.wheel{width:min(420px,80vw);height:auto;overflow:visible}
+#wheelRot{transform-origin:0 0;transform-box:view-box}
+body.tv .wheel{width:min(560px,60vh)}
+.intro{text-align:center;padding:36px 16px;border-radius:20px;background:color-mix(in srgb,var(--c) 16%,rgba(21,25,35,.9));box-shadow:0 0 60px -20px var(--c);border:2px solid var(--c);max-width:820px;margin:10px auto}
+.intro .lbl{color:var(--ink);opacity:.8;font-weight:700}
+.intro h2{font-size:clamp(30px,5vw,56px);margin:8px 0;color:#fff}
+.intro p{font-size:18px;max-width:560px;margin:0 auto}
+.winner{display:flex;align-items:center;gap:14px;justify-content:center;margin:18px auto 0;max-width:620px;padding:14px 18px;border-radius:16px;background:rgba(185,166,245,.14);border:2px solid var(--acc);font-size:20px}
+.winner svg{width:64px;height:64px}
+.winner span{font:800 30px/1 "Inter Tight",Inter,sans-serif;color:var(--ok)}
+.winner.none{border-color:var(--edge);background:rgba(21,25,35,.85);color:var(--muted)}
+.scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
+.scenes.ph{grid-template-columns:1fr;gap:10px}
+.scene{width:100%;height:auto;display:block}
+.bigq{text-align:center;font:800 clamp(24px,4vw,44px)/1.15 "Inter Tight",Inter,sans-serif;margin:16px 0 6px;text-wrap:balance}
+.bigq span{color:var(--acc)}
+.bigq.sm{font-size:clamp(20px,3vw,30px)}
+.fivebox{display:grid;gap:10px;max-width:420px;margin:12px auto 0}
+.fivebox input{font-size:20px;min-height:54px}
+textarea{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--edge);background:var(--panel);color:var(--ink);resize:vertical}
+.entries{list-style:none;padding:0;margin:14px auto 0;max-width:900px;display:grid;gap:10px;counter-reset:en}
+.entries li{counter-increment:en;display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:14px;background:rgba(21,25,35,.85);font-size:20px}
+.entries li::before{content:counter(en);font:800 20px/1 "Inter Tight",Inter,sans-serif;color:var(--acc)}
+.entries li span{flex:1}
+.entries li b{color:var(--ok);white-space:nowrap}
+.entries li.win{outline:3px solid var(--gold)}
+.emoji{text-align:center;font-size:clamp(64px,12vw,140px);line-height:1.1;margin:10px 0}
+.hints{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.hints span{padding:8px 14px;border-radius:99px;background:rgba(138,180,248,.16);color:var(--blue);font-weight:700}
+.memgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;max-width:760px;margin:14px auto 0}
+.memgrid div{aspect-ratio:1;display:grid;place-items:center;font-size:clamp(34px,6vw,70px);background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:16px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0}
+.tags span{padding:6px 12px;border-radius:99px;background:var(--acc);color:var(--stoneInk);font-weight:700}
+.who{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:20px;align-items:start;max-width:980px;margin:14px auto 0}
+.mystery{aspect-ratio:3/4;border-radius:18px;background:radial-gradient(60% 50% at 50% 40%,rgba(185,166,245,.35),transparent 70%),repeating-linear-gradient(45deg,#1d2230 0 14px,#232838 14px 28px);border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;font:800 96px/1 "Inter Tight",Inter,sans-serif;color:var(--acc);text-align:center;padding:10px}
+.mystery b{font-size:26px;line-height:1.15}
+.clues{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.clues li{padding:12px 16px;border-radius:12px;background:rgba(21,25,35,.85);color:var(--muted);font-size:18px}
+.clues li.on{background:var(--sand);color:var(--stoneInk);font-weight:600}
+.clues.ph li{font-size:15px;padding:9px 12px}
+@media(max-width:700px){.who{grid-template-columns:1fr}.mystery{aspect-ratio:auto;height:120px}}
+.hl{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.hlc{flex:1 1 220px;max-width:340px;background:var(--sand);color:var(--stoneInk);border-radius:18px;padding:20px;text-align:center;box-shadow:0 5px 0 var(--sandLo)}
+.hlc b{display:block;font:800 22px/1.15 "Inter Tight",Inter,sans-serif}
+.hlc span{display:block;margin-top:8px;font-size:20px;font-weight:700;color:#6b4fd6}
+.hl.ph .hlc{padding:12px;flex-basis:130px}
+.hl.ph .hlc b{font-size:16px}
+.hl.ph .hlc span{font-size:15px}
+.hlbtn{flex:1 1 140px;min-height:64px;font-size:20px;border-radius:14px;background:rgba(255,255,255,.1);border:2px solid var(--edge)}
+.hlbtn[aria-pressed=true]{background:var(--acc);color:#15121f}
+.pl.outp{opacity:.45;text-decoration:line-through}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin-top:16px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:4px;width:min(200px,30vw)}
+.pod svg{width:80px;height:80px}
+.pod b{font-size:18px}
+.pod span{color:var(--muted)}
+.pod .step{width:100%;display:grid;place-items:center;font:800 34px/1 "Inter Tight",Inter,sans-serif;color:var(--stoneInk);background:linear-gradient(180deg,var(--sandHi) 0 5px,var(--sand) 5px);border-radius:10px 10px 0 0}
+.pod.p1 .step{height:150px}.pod.p2 .step{height:110px}.pod.p3 .step{height:80px}
+body.tv .bigq{font-size:clamp(36px,4.4vw,64px)}
+body.tv .entries li,body.tv .clues li{font-size:24px}
+.review{max-width:980px;margin:14px auto 0;background:rgba(21,25,35,.88);border:1px solid rgba(185,166,245,.35);border-radius:18px;padding:18px}
+.rvlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.rvlist li{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04)}
+.rvlist .n{display:flex;align-items:center;gap:8px;min-width:130px}
+.rvlist .n svg{width:34px;height:34px}
+.rvlist q{flex:1;font-size:18px;quotes:"“" "”"}
+.rvans{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.rvchip{min-height:40px;padding:0 12px;border-radius:99px;background:rgba(242,169,126,.16);border:1px solid rgba(242,169,126,.5);color:var(--coral);font-weight:600}
+.rvchip.ok{background:rgba(166,217,160,.16);border-color:rgba(166,217,160,.6);color:var(--ok)}
+.rvn{font:800 22px/1 "Inter Tight",Inter,sans-serif;color:var(--acc);min-width:1.5em;text-align:right}
+
+/* TV mode: bigger everything, controls tucked away */
+body.tv .wrap{max-width:1600px}
+body.tv{font-size:19px}
+body.tv h2{font-size:clamp(30px,3.6vw,52px)}
+body.tv .pyr{--w:min(260px,calc((100% - 24px)/4))}
+body.tv .slot{min-height:104px}
+body.tv .slot .nm{font-size:clamp(16px,1.6vw,24px)}
+body.tv .slot .st{font-size:15px}
+body.tv .answers div{font-size:clamp(17px,1.5vw,24px);padding:16px}
+body.tv .top .homebtn{display:none}
+body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
+@media(prefers-reduced-motion:reduce){.slot.drop{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Top Ten Pyramid</h1>
+      <p class="sub" id="tagline">Every answer is shown. Can you put them in the right order?</p>
+    </div>
+    <svg class="moon" viewBox="0 0 100 100" aria-hidden="true"><path d="M62 8 C40 14 28 34 30 54 C32 76 52 92 74 90 C84 89 92 85 96 79 C86 84 70 84 58 74 C44 62 42 40 50 24 C53 17 57 12 62 8Z" fill="#e9eaf0"/></svg>
+    <button class="ghost homebtn hidden" type="button" id="homeBtn" style="position:relative;z-index:1">Back to menu</button>
+  </div>
+
+  <!-- HOME -->
+  <section id="vHome">
+    <div class="doors">
+      <button class="door" type="button" data-go="solo">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="19" y="2" width="16" height="10" rx="2" fill="#e9eaf0"/><rect x="10" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="28" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="1" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="19" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="37" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/></svg>
+        <b>Play solo</b><span>Pick a category, place all ten stones, score a point for each one in the right spot.</span>
+      </button>
+      <button class="door" type="button" data-go="host">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="3" y="3" width="48" height="30" rx="4" fill="none" stroke="#e9eaf0" stroke-width="3"/><rect x="20" y="36" width="14" height="4" rx="2" fill="#b9a6f5"/><rect x="21" y="10" width="12" height="7" rx="1.5" fill="#b9a6f5"/><rect x="14" y="19" width="12" height="7" rx="1.5" fill="#8ab4f8"/><rect x="28" y="19" width="12" height="7" rx="1.5" fill="#8ab4f8"/></svg>
+        <b>Host a game</b><span>Put this on the TV. Players join on their phones with a code or QR.</span>
+      </button>
+      <button class="door" type="button" data-go="join">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="16" y="2" width="22" height="40" rx="4" fill="none" stroke="#e9eaf0" stroke-width="3"/><rect x="22" y="12" width="10" height="6" rx="1.5" fill="#b9a6f5"/><rect x="21" y="21" width="12" height="6" rx="1.5" fill="#8ab4f8"/><circle cx="27" cy="36" r="2" fill="#b9a6f5"/></svg>
+        <b>Join a game</b><span>Got a code from the host's screen? Enter it here with your name.</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SOLO -->
+  <section id="vSolo" class="hidden">
+    <nav class="groups" id="sGroups" aria-label="Themes"></nav>
+    <div class="pick">
+      <select id="sCat" aria-label="Category"></select>
+      <button class="ghost" type="button" id="sRandom">Random category</button>
+    </div>
+    <div id="sBoard"></div>
+    <div class="bar">
+      <button class="go" type="button" id="sCheck" disabled>Check my pyramid</button>
+      <button class="ghost" type="button" id="sClear">Clear</button>
+    </div>
+    <div class="banner hidden" id="sResult">
+      <div class="big" id="sScore"></div>
+      <p id="sMsg"></p>
+      <div class="bar"><button class="go" type="button" id="sAgain">Play again</button><button class="ghost" type="button" id="sNext">Next category</button></div>
+    </div>
+  </section>
+
+  <!-- HOST -->
+  <section id="vHost" class="hidden">
+    <div class="notice hidden" id="hNotice"></div>
+    <div id="hLobby" class="lobby">
+      <div class="codebox">
+        <div class="lbl">Join on your phone with code</div>
+        <div class="code" id="hCode">····</div>
+        <div class="qr" id="hQr"></div>
+        <div class="url" id="hUrl"></div>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>Players <span id="hCount" style="color:var(--muted);font-family:Inter;font-size:16px"></span></h3>
+          <div class="players" id="hPlayers"></div>
+          <p class="sub" id="hNoPlayers">Waiting for players to join…</p>
+        </div>
+        <div class="panel hidden" id="hLbPanel"><h3 id="hLbTitle">Leaderboard</h3><ol class="board-lb" id="hLb"></ol></div>
+        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. Before each round everyone votes for a category; a tie goes to a blackjack showdown. Rank the pyramid for a point per correct stone. At half-time the wheel picks a mini-game worth 5 points.</p></div>
+      </div>
+    </div>
+    <div id="hStage" class="hidden">
+      <div class="mini">Join with code <b id="hCode2"></b><span id="hRound"></span></div>
+      <div class="cat"><h2 id="hTitle"></h2><p id="hNote"></p></div>
+      <div class="timer hidden" id="hTimer"></div>
+      <div id="hBoard"></div>
+      <div class="answers" id="hAnswers"></div>
+      <div class="panel" style="margin-top:16px"><h3 id="hStatusH">Players</h3><div class="players" id="hDone"></div><ol class="board-lb hidden" id="hRoundLb"></ol></div>
+    </div>
+    <div id="hX" class="hidden"></div>
+    <div class="ctrl">
+      <label class="f" id="hDurWrap" style="flex-direction:row;align-items:center;gap:8px">Ranking timer
+        <select id="hDur" aria-label="Ranking timer"><option value="0">No timer</option><option value="45">45 seconds</option><option value="60" selected>60 seconds</option><option value="90">90 seconds</option><option value="120">2 minutes</option></select>
+      </label>
+      <button class="go" type="button" id="hStart">Start game</button>
+      <button class="go hidden" type="button" id="hReveal">Reveal answers</button>
+      <button class="go hidden" type="button" id="hNext">Next</button>
+      <button class="go hidden" type="button" id="hSpin">Spin the wheel</button>
+      <button class="ghost" type="button" id="hTv">TV mode</button>
+      <button class="ghost hidden" type="button" id="hEnd">End game</button>
+      <button class="ghost" type="button" id="hNew">New game code</button>
+    </div>
+  </section>
+
+  <!-- JOIN / PLAYER -->
+  <section id="vJoin" class="hidden">
+    <div class="notice hidden" id="jNotice"></div>
+    <form id="jForm" class="panel" style="max-width:460px;margin:10px auto">
+      <h3 style="margin-bottom:12px">Join a game</h3>
+      <label class="f">Game code<input id="jCode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700"></label>
+      <div class="f" style="margin-top:12px">Pick your character<div class="avgrid" id="jAv" role="group" aria-label="Pick your character"></div></div>
+      <label class="f" style="margin-top:12px">Your nickname<input id="jName" maxlength="16" autocomplete="nickname" placeholder="e.g. Sam"></label>
+      <button class="go" type="submit" style="width:100%;margin-top:14px">Join</button>
+      <p class="hint" id="jErr"></p>
+    </form>
+    <div id="jPlay" class="hidden">
+      <div class="mini"><span id="jMeAv"></span><span id="jWho"></span><span>Code <b id="jCodeShow"></b></span><span id="jTotal"></span></div>
+      <div id="jWait" class="wait"><div class="big" id="jWaitBig">You're in!</div><p id="jWaitMsg">Watch the TV. The game starts when the host is ready.</p><ol class="board-lb" id="jLb" style="max-width:460px;margin:0 auto;text-align:left"></ol></div>
+      <div id="jRound" class="hidden">
+        <div class="timer hidden" id="jTimer"></div>
+        <div id="jBoard"></div>
+        <div class="bar"><button class="go" type="button" id="jLock" disabled>Lock in</button><button class="ghost" type="button" id="jClear">Clear</button></div>
+        <div class="banner hidden" id="jResult"><div class="big" id="jScore"></div><p id="jMsg"></p></div>
+      </div>
+      <div id="jX" class="hidden"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* QR encoder: qrcode-terminal vendor build of Kazuhiko Arase's QRCode for JavaScript (MIT / Apache-2.0) */
+const QRLIB=(()=>{const defs={'QR8bitByte':function(module,exports,require){
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+},
+'QRBitBuffer':function(module,exports,require){
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+},
+'QRErrorCorrectLevel':function(module,exports,require){
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+},
+'QRMaskPattern':function(module,exports,require){
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+},
+'QRMath':function(module,exports,require){
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+},
+'QRMode':function(module,exports,require){
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+},
+'QRPolynomial':function(module,exports,require){
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+},
+'QRRSBlock':function(module,exports,require){
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+},
+'QRUtil':function(module,exports,require){
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+},
+'index':function(module,exports,require){
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+}};const cache={};function req(p){const n=p.replace('./','').replace(/\.js$/,'')||'index';const k=n===''?'index':n;if(cache[k])return cache[k].exports;const m={exports:{}};cache[k]=m;defs[k](m,m.exports,req);return m.exports}return {QRCode:req('./index'),ECL:req('./QRErrorCorrectLevel')}})();
+
+</script>
+<script>
+{
+// Each item: [display name, stat, ...aliases]
+// Category flags: people (surname alone counts), ties (equal stats share a rank), exact (no typo matching)
+const GROUPS = [
+{id:'geo', name:'Geography', cats:[
+  {id:'area', t:'Largest countries by area', n:'Total area, including inland water.', items:[
+    ['Russia','17.1m km²','russian federation'],['Canada','10.0m km²'],
+    ['United States','9.8m km²','usa','us','america','united states of america'],['China','9.6m km²','prc'],
+    ['Brazil','8.5m km²'],['Australia','7.7m km²'],['India','3.3m km²'],['Argentina','2.8m km²'],
+    ['Kazakhstan','2.7m km²'],['Algeria','2.4m km²']]},
+  {id:'pop', t:'Most populous countries', n:'UN estimates for 2026.', items:[
+    ['India','1.48bn'],['China','1.41bn','prc'],['United States','349m','usa','us','america'],
+    ['Indonesia','288m'],['Pakistan','259m'],['Nigeria','242m'],['Brazil','214m'],
+    ['Bangladesh','178m'],['Russia','143m','russian federation'],['Ethiopia','139m']]},
+  {id:'mtn', t:'Tallest mountains on Earth', n:'Height above sea level.', items:[
+    ['Everest','8,849 m','mount everest','qomolangma','sagarmatha'],['K2','8,611 m','godwin austen','mount godwin austen'],
+    ['Kangchenjunga','8,586 m','kanchenjunga'],['Lhotse','8,516 m'],['Makalu','8,485 m'],['Cho Oyu','8,188 m'],
+    ['Dhaulagiri','8,167 m','dhaulagiri i'],['Manaslu','8,163 m'],['Nanga Parbat','8,126 m'],['Annapurna','8,091 m','annapurna i']]},
+  {id:'river', t:'Longest rivers in the world', n:'Common reference lengths; Nile vs Amazon is still debated.', items:[
+    ['Nile','6,650 km'],['Amazon','6,400 km'],['Yangtze','6,300 km','chang jiang'],
+    ['Mississippi–Missouri','6,275 km','mississippi','missouri'],['Yenisei','5,539 km','yenisey'],
+    ['Yellow River','5,464 km','yellow','huang he','huanghe'],['Ob–Irtysh','5,410 km','ob','irtysh'],
+    ['Paraná','4,880 km','parana'],['Congo','4,700 km','zaire'],['Amur','4,444 km','heilong','heilongjiang']]},
+  {id:'states', t:'Largest US states by area', n:'Total area, including water.', items:[
+    ['Alaska','1.72m km²'],['Texas','696k km²'],['California','424k km²'],['Montana','381k km²'],
+    ['New Mexico','315k km²'],['Arizona','295k km²'],['Nevada','286k km²'],['Colorado','270k km²'],
+    ['Oregon','255k km²'],['Wyoming','253k km²']]},
+  {id:'africa', t:'Largest countries in Africa', n:'Total area.', items:[
+    ['Algeria','2.38m km²'],['DR Congo','2.34m km²','democratic republic of the congo','drc','congo','dr congo','zaire','democratic republic of congo'],
+    ['Sudan','1.86m km²'],['Libya','1.76m km²'],['Chad','1.28m km²'],['Niger','1.27m km²'],
+    ['Angola','1.25m km²'],['Mali','1.24m km²'],['South Africa','1.22m km²'],['Ethiopia','1.10m km²']]},
+  {id:'islands', t:'Largest islands in the world', n:'Australia counts as a continent, not an island.', items:[
+    ['Greenland','2.13m km²'],['New Guinea','786k km²','papua','papua new guinea'],['Borneo','743k km²'],
+    ['Madagascar','587k km²'],['Baffin Island','507k km²','baffin'],['Sumatra','473k km²','sumatera'],
+    ['Honshu','227k km²'],['Victoria Island','217k km²','victoria'],['Great Britain','209k km²','britain'],
+    ['Ellesmere Island','196k km²','ellesmere']]},
+  {id:'lakes', t:'Largest lakes by area', n:'Surface area; Michigan and Huron counted separately.', items:[
+    ['Caspian Sea','371k km²','caspian'],['Lake Superior','82.1k km²'],['Lake Victoria','59.9k km²'],
+    ['Lake Huron','59.6k km²'],['Lake Michigan','58.0k km²'],['Lake Tanganyika','32.6k km²'],
+    ['Lake Baikal','31.5k km²'],['Great Bear Lake','31.0k km²','great bear'],['Lake Malawi','29.5k km²','lake nyasa','nyasa'],
+    ['Great Slave Lake','27.0k km²','great slave']]},
+  {id:'eu', t:'Largest EU countries by area', n:'France means metropolitan France only.', items:[
+    ['France','552k km²'],['Spain','506k km²'],['Sweden','450k km²'],['Germany','358k km²'],
+    ['Finland','338k km²'],['Poland','313k km²'],['Italy','302k km²'],['Romania','238k km²'],
+    ['Greece','132k km²'],['Bulgaria','111k km²']]},
+  {id:'samerica', t:'Largest countries in South America', n:'Total area.', items:[
+    ['Brazil','8.52m km²'],['Argentina','2.78m km²'],['Peru','1.29m km²'],['Colombia','1.14m km²'],
+    ['Bolivia','1.10m km²'],['Venezuela','916k km²'],['Chile','756k km²'],['Paraguay','407k km²'],
+    ['Ecuador','284k km²'],['Guyana','215k km²']]}
+]},
+{id:'sport', name:'Sport', cats:[
+  {id:'pl', t:'Premier League all-time top scorers', n:'Most Premier League goals, as of the 2026–27 season.', people:true, items:[
+    ['Alan Shearer','260 goals'],['Harry Kane','213 goals'],['Wayne Rooney','208 goals'],
+    ['Mohamed Salah','192 goals','mo salah'],['Andy Cole','187 goals','andrew cole'],['Sergio Agüero','184 goals','kun aguero'],
+    ['Frank Lampard','177 goals'],['Thierry Henry','175 goals'],['Robbie Fowler','163 goals'],['Jermain Defoe','162 goals']]},
+  {id:'plapps', t:'Most Premier League appearances', n:'Milner retired in 2026 as the record holder.', people:true, items:[
+    ['James Milner','658 apps'],['Gareth Barry','653 apps'],['Ryan Giggs','632 apps'],['Frank Lampard','609 apps'],
+    ['David James','572 apps'],['Gary Speed','535 apps'],['Emile Heskey','516 apps'],['Mark Schwarzer','514 apps'],
+    ['Jamie Carragher','508 apps'],['Phil Neville','505 apps']]},
+  {id:'plast', t:'Premier League all-time assists', n:'Most Premier League assists, as of the 2026–27 season.', people:true, ties:true, items:[
+    ['Ryan Giggs','162'],['Kevin De Bruyne','119','de bruyne','kdb'],['Cesc Fàbregas','111','fabregas'],
+    ['Wayne Rooney','103'],['Frank Lampard','102'],['Dennis Bergkamp','94'],['Mohamed Salah','94','mo salah'],
+    ['David Silva','93'],['Steven Gerrard','92'],['James Milner','90']]},
+  {id:'wc', t:'Men\'s World Cup all-time top scorers', n:'After the 2026 World Cup. Tied players share a rank.', people:true, ties:true, items:[
+    ['Kylian Mbappé','22 goals','mbappe'],['Lionel Messi','21 goals'],['Miroslav Klose','16 goals'],
+    ['Ronaldo','15 goals','ronaldo nazario','r9','ronaldo brazil'],['Gerd Müller','14 goals','muller','gerd muller'],
+    ['Harry Kane','14 goals'],['Just Fontaine','13 goals'],['Pelé','12 goals','pele'],
+    ['Sándor Kocsis','11 goals','kocsis','sandor kocsis'],['Jürgen Klinsmann','11 goals','klinsmann','jurgen klinsmann']]},
+  {id:'engcaps', t:'Most-capped England men\'s players', n:'Kane broke Shilton\'s record in November 2026.', people:true, ties:true, items:[
+    ['Harry Kane','126+ caps'],['Peter Shilton','125 caps'],['Wayne Rooney','120 caps'],['David Beckham','115 caps'],
+    ['Steven Gerrard','114 caps'],['Bobby Moore','108 caps'],['Ashley Cole','107 caps','cole'],
+    ['Bobby Charlton','106 caps','charlton'],['Frank Lampard','106 caps'],['Billy Wright','105 caps']]},
+  {id:'enggoals', t:'England men\'s all-time top scorers', n:'Kane is still adding to his total.', people:true, ties:true, items:[
+    ['Harry Kane','91+ goals'],['Wayne Rooney','53 goals'],['Bobby Charlton','49 goals'],['Gary Lineker','48 goals'],
+    ['Jimmy Greaves','44 goals'],['Michael Owen','40 goals'],['Tom Finney','30 goals'],['Nat Lofthouse','30 goals'],
+    ['Alan Shearer','30 goals'],['Vivian Woodward','29 goals']]},
+  {id:'bdor', t:'Ballon d\'Or winners 2000–2009, in order', n:'Ten different winners in ten years.', people:true, items:[
+    ['Luís Figo','2000','figo','luis figo'],['Michael Owen','2001'],['Ronaldo (Brazil)','2002','ronaldo','ronaldo nazario','r9'],
+    ['Pavel Nedvěd','2003','nedved'],['Andriy Shevchenko','2004','shevchenko','andrei shevchenko'],
+    ['Ronaldinho','2005'],['Fabio Cannavaro','2006','cannavaro'],['Kaká','2007','kaka'],
+    ['Cristiano Ronaldo','2008','ronaldo','cr7'],['Lionel Messi','2009']]},
+  {id:'wchosts', t:'First ten men\'s World Cup hosts, in order', n:'From 1930 onwards.', items:[
+    ['Uruguay','1930'],['Italy','1934'],['France','1938'],['Brazil','1950'],['Switzerland','1954'],
+    ['Sweden','1958'],['Chile','1962'],['England','1966'],['Mexico','1970'],['West Germany','1974','germany']]},
+  {id:'nba', t:'NBA all-time leading scorers', n:'Regular-season points; + means still playing.', people:true, items:[
+    ['LeBron James','43.6k+ pts','lebron'],['Kareem Abdul-Jabbar','38,387 pts','kareem','abdul jabbar','jabbar'],
+    ['Karl Malone','36,928 pts'],['Kobe Bryant','33,643 pts','kobe'],['Kevin Durant','32.9k+ pts','kd'],
+    ['Michael Jordan','32,292 pts','mj'],['Dirk Nowitzki','31,560 pts','dirk'],['Wilt Chamberlain','31,419 pts','wilt'],
+    ['James Harden','29.6k+ pts'],['Shaquille O\'Neal','28,596 pts','shaq','oneal','o neal','shaquille oneal']]},
+  {id:'paris', t:'Paris 2024 Olympics medal table', n:'Official order: golds first, then silvers.', items:[
+    ['United States','40 gold','usa','us','america','team usa'],['China','40 gold'],['Japan','20 gold'],
+    ['Australia','18 gold'],['France','16 gold'],['Netherlands','15 gold','holland'],
+    ['Great Britain','14 gold','gb','team gb','uk','united kingdom','britain'],['South Korea','13 gold','korea'],
+    ['Italy','12 gold'],['Germany','12 gold']]}
+]},
+{id:'music', name:'Music', cats:[
+  {id:'spart', t:'Spotify\'s most-streamed artists ever', n:'Spotify\'s own all-time list, April 2026.', items:[
+    ['Taylor Swift','','taylor','swift'],['Bad Bunny',''],['Drake',''],['The Weeknd','','weeknd'],
+    ['Ariana Grande','','ariana'],['Ed Sheeran','','sheeran'],['Justin Bieber','','bieber'],
+    ['Billie Eilish','','billie','eilish'],['Eminem','','slim shady'],['Kanye West','','kanye','ye']]},
+  {id:'spsongs', t:'Spotify\'s most-streamed songs ever', n:'Spotify\'s own all-time list, April 2026.', items:[
+    ['Blinding Lights','The Weeknd'],['Shape of You','Ed Sheeran'],['Sweater Weather','The Neighbourhood'],
+    ['Starboy','The Weeknd ft. Daft Punk'],['As It Was','Harry Styles'],['Someone You Loved','Lewis Capaldi'],
+    ['Sunflower','Post Malone & Swae Lee'],['One Dance','Drake ft. Wizkid & Kyla'],['Perfect','Ed Sheeran'],
+    ['Stay','The Kid LAROI & Justin Bieber']]},
+  {id:'taylor', t:'Taylor Swift\'s first ten albums, in order', n:'Studio albums, original releases.', items:[
+    ['Taylor Swift','2006','debut','self titled'],['Fearless','2008'],['Speak Now','2010'],['Red','2012'],
+    ['1989','2014'],['Reputation','2017'],['Lover','2019'],['Folklore','2020'],['Evermore','2020'],['Midnights','2022']]},
+  {id:'em', t:'Eminem\'s first ten albums, in order', n:'Solo studio albums.', items:[
+    ['Infinite','1996'],['The Slim Shady LP','1999','slim shady lp','slim shady'],
+    ['The Marshall Mathers LP','2000','marshall mathers lp','marshall mathers','mmlp'],['The Eminem Show','2002','eminem show'],
+    ['Encore','2004'],['Relapse','2009'],['Recovery','2010'],
+    ['The Marshall Mathers LP 2','2013','marshall mathers lp 2','mmlp2','mmlp 2','marshall mathers 2'],
+    ['Revival','2017'],['Kamikaze','2018']]},
+  {id:'kanye', t:'Kanye West\'s first ten albums, in order', n:'Solo studio albums (no collaborations).', items:[
+    ['The College Dropout','2004','college dropout'],['Late Registration','2005'],['Graduation','2007'],
+    ['808s & Heartbreak','2008','808s','808s and heartbreak','808 and heartbreak'],
+    ['My Beautiful Dark Twisted Fantasy','2010','mbdtf','dark twisted fantasy'],['Yeezus','2013'],
+    ['The Life of Pablo','2016','life of pablo','tlop'],['Ye','2018'],['Jesus Is King','2019'],['Donda','2021']]},
+  {id:'jayz', t:'Jay-Z\'s first ten albums, in order', n:'Solo studio albums.', items:[
+    ['Reasonable Doubt','1996'],['In My Lifetime, Vol. 1','1997','in my lifetime','vol 1','volume 1','in my lifetime vol 1'],
+    ['Vol. 2… Hard Knock Life','1998','vol 2','volume 2','hard knock life'],
+    ['Vol. 3… Life and Times of S. Carter','1999','vol 3','volume 3','life and times of s carter'],
+    ['The Dynasty: Roc La Familia','2000','dynasty','roc la familia'],['The Blueprint','2001','blueprint'],
+    ['The Blueprint 2','2002','blueprint 2','the gift and the curse'],['The Black Album','2003','black album'],
+    ['Kingdom Come','2006'],['American Gangster','2007']]},
+  {id:'nas', t:'Nas\'s first ten albums, in order', n:'Studio albums.', items:[
+    ['Illmatic','1994'],['It Was Written','1996'],['I Am…','1999','i am'],['Nastradamus','1999'],
+    ['Stillmatic','2001'],['God\'s Son','2002'],['Street\'s Disciple','2004'],['Hip Hop Is Dead','2006'],
+    ['Untitled','2008'],['Life Is Good','2012']]},
+  {id:'coldplay', t:'Coldplay\'s ten albums, in order', n:'Studio albums.', items:[
+    ['Parachutes','2000'],['A Rush of Blood to the Head','2002','rush of blood to the head','rush of blood'],
+    ['X&Y','2005','xy','x and y','x y'],['Viva la Vida','2008','viva la vida or death and all his friends'],
+    ['Mylo Xyloto','2011'],['Ghost Stories','2014'],['A Head Full of Dreams','2015','head full of dreams'],
+    ['Everyday Life','2019'],['Music of the Spheres','2021'],['Moon Music','2024']]},
+  {id:'madonna', t:'Madonna\'s first ten albums, in order', n:'Studio albums.', items:[
+    ['Madonna','1983','debut','self titled'],['Like a Virgin','1984'],['True Blue','1986'],['Like a Prayer','1989'],
+    ['Erotica','1992'],['Bedtime Stories','1994'],['Ray of Light','1998'],['Music','2000'],['American Life','2003'],
+    ['Confessions on a Dance Floor','2005','confessions']]},
+  {id:'beatles', t:'The Beatles\' first ten albums, in order', n:'UK studio albums (Magical Mystery Tour was an EP in the UK).', items:[
+    ['Please Please Me','1963'],['With the Beatles','1963'],['A Hard Day\'s Night','1964','hard days night'],
+    ['Beatles for Sale','1964'],['Help!','1965'],['Rubber Soul','1965'],['Revolver','1966'],
+    ['Sgt. Pepper\'s Lonely Hearts Club Band','1967','sgt pepper','sgt peppers','sergeant pepper','sergeant peppers'],
+    ['The White Album','1968','white album','the beatles'],['Yellow Submarine','1969']]}
+]},
+{id:'history', name:'History', cats:[
+  {id:'potus1', t:'The first ten US presidents, in order', n:'Year each took office.', people:true, items:[
+    ['George Washington','1789'],['John Adams','1797'],['Thomas Jefferson','1801'],['James Madison','1809'],
+    ['James Monroe','1817'],['John Quincy Adams','1825','jqa','quincy adams'],['Andrew Jackson','1829'],
+    ['Martin Van Buren','1837','van buren'],['William Henry Harrison','1841','harrison','william harrison'],['John Tyler','1841']]},
+  {id:'potus2', t:'US presidents from Truman to Clinton', n:'In order, year each took office.', people:true, items:[
+    ['Harry Truman','1945'],['Dwight Eisenhower','1953','ike'],['John F. Kennedy','1961','jfk','john kennedy'],
+    ['Lyndon B. Johnson','1963','lbj','lyndon johnson'],['Richard Nixon','1969'],['Gerald Ford','1974'],
+    ['Jimmy Carter','1977'],['Ronald Reagan','1981'],['George H. W. Bush','1989','george bush','bush senior','george hw bush'],
+    ['Bill Clinton','1993']]},
+  {id:'ukpm1', t:'UK prime ministers from Churchill (1940)', n:'In order of first taking office.', people:true, items:[
+    ['Winston Churchill','1940'],['Clement Attlee','1945'],['Anthony Eden','1955'],['Harold Macmillan','1957'],
+    ['Alec Douglas-Home','1963','douglas home','home'],['Harold Wilson','1964'],['Edward Heath','1970','ted heath'],
+    ['James Callaghan','1976','jim callaghan'],['Margaret Thatcher','1979'],['John Major','1990']]},
+  {id:'ukpm2', t:'The last ten UK prime ministers', n:'Earliest first, up to Andy Burnham (July 2026).', people:true, items:[
+    ['John Major','1990'],['Tony Blair','1997'],['Gordon Brown','2007'],['David Cameron','2010'],
+    ['Theresa May','2016'],['Boris Johnson','2019'],['Liz Truss','2022'],['Rishi Sunak','2022'],
+    ['Keir Starmer','2024'],['Andy Burnham','2026']]},
+  {id:'mon', t:'The last ten British monarchs', n:'Earliest first. Use numbers: George 3 or George III.', exact:true, items:[
+    ['George III','1760','george 3','george the third','george third'],['George IV','1820','george 4','george the fourth','george fourth'],
+    ['William IV','1830','william 4','william the fourth','william'],['Victoria','1837','queen victoria'],
+    ['Edward VII','1901','edward 7','edward the seventh'],['George V','1910','george 5','george the fifth','george fifth'],
+    ['Edward VIII','1936','edward 8','edward the eighth'],['George VI','1936','george 6','george the sixth','george sixth'],
+    ['Elizabeth II','1952','elizabeth 2','elizabeth the second','queen elizabeth','elizabeth'],
+    ['Charles III','2022','charles 3','charles the third','king charles','charles']]},
+  {id:'moon', t:'The ten first people to walk on the Moon', n:'In order of their landings.', people:true, items:[
+    ['Neil Armstrong','Apollo 11'],['Buzz Aldrin','Apollo 11'],['Pete Conrad','Apollo 12','charles conrad'],
+    ['Alan Bean','Apollo 12'],['Alan Shepard','Apollo 14'],['Edgar Mitchell','Apollo 14'],
+    ['David Scott','Apollo 15','dave scott'],['James Irwin','Apollo 15','jim irwin'],['John Young','Apollo 16'],
+    ['Charlie Duke','Apollo 16','charles duke']]},
+  {id:'space', t:'The first ten people in space', n:'In order, 1961–63.', people:true, items:[
+    ['Yuri Gagarin','Vostok 1'],['Alan Shepard','Freedom 7'],['Gus Grissom','Liberty Bell 7','virgil grissom'],
+    ['Gherman Titov','Vostok 2'],['John Glenn','Friendship 7'],['Scott Carpenter','Aurora 7'],
+    ['Andriyan Nikolayev','Vostok 3','nikolaev'],['Pavel Popovich','Vostok 4'],['Wally Schirra','Sigma 7','walter schirra'],
+    ['Gordon Cooper','Faith 7']]},
+  {id:'states13', t:'The first ten US states', n:'In order of ratifying the Constitution.', items:[
+    ['Delaware','Dec 1787'],['Pennsylvania','Dec 1787'],['New Jersey','Dec 1787'],['Georgia','Jan 1788'],
+    ['Connecticut','Jan 1788'],['Massachusetts','Feb 1788'],['Maryland','Apr 1788'],['South Carolina','May 1788'],
+    ['New Hampshire','Jun 1788'],['Virginia','Jun 1788']]},
+  {id:'rome', t:'The first ten Roman emperors', n:'In order, with the year each took power.', people:true, items:[
+    ['Augustus','27 BC','octavian'],['Tiberius','AD 14'],['Caligula','AD 37','gaius'],['Claudius','AD 41'],
+    ['Nero','AD 54'],['Galba','AD 68'],['Otho','AD 69'],['Vitellius','AD 69'],['Vespasian','AD 69'],['Titus','AD 79']]},
+  {id:'olyhosts', t:'First ten countries to host the Summer Olympics', n:'In order of first hosting.', items:[
+    ['Greece','1896'],['France','1900'],['United States','1904','usa','us','america'],
+    ['United Kingdom','1908','uk','great britain','britain','england'],['Sweden','1912'],['Belgium','1920'],
+    ['Netherlands','1928','holland'],['Germany','1936'],['Finland','1952'],['Australia','1956']]}
+]},
+{id:'impossible', name:'Impossible', cats:[
+  {id:'moons', t:'Biggest moons in the Solar System', n:'By diameter.', items:[
+    ['Ganymede','5,268 km'],['Titan','5,150 km'],['Callisto','4,821 km'],['Io','3,643 km'],
+    ['The Moon','3,475 km','moon','luna','earths moon','our moon'],['Europa','3,122 km'],['Triton','2,707 km'],
+    ['Titania','1,578 km'],['Rhea','1,527 km'],['Oberon','1,523 km']]},
+  {id:'universe', t:'Most abundant elements in the universe', n:'By mass. Chemical symbols work too.', items:[
+    ['Hydrogen','~74%','h'],['Helium','~24%','he'],['Oxygen','~1%','o'],['Carbon','0.5%','c'],['Neon','0.13%','ne'],
+    ['Iron','0.11%','fe'],['Nitrogen','0.10%','n'],['Silicon','0.07%','si'],['Magnesium','0.06%','mg'],['Sulfur','0.05%','s','sulphur']]},
+  {id:'crust', t:'Most abundant elements in Earth\'s crust', n:'By mass. Chemical symbols work too.', items:[
+    ['Oxygen','46.1%','o'],['Silicon','28.2%','si'],['Aluminium','8.2%','al','aluminum'],['Iron','5.6%','fe'],
+    ['Calcium','4.2%','ca'],['Sodium','2.4%','na'],['Magnesium','2.3%','mg'],['Potassium','2.1%','k'],
+    ['Titanium','0.57%','ti'],['Hydrogen','0.14%','h']]},
+  {id:'el1120', t:'Elements 11 to 20 of the periodic table', n:'In order of atomic number. Symbols work too.', items:[
+    ['Sodium','No. 11','na'],['Magnesium','No. 12','mg'],['Aluminium','No. 13','al','aluminum'],['Silicon','No. 14','si'],
+    ['Phosphorus','No. 15','p'],['Sulfur','No. 16','s','sulphur'],['Chlorine','No. 17','cl'],['Argon','No. 18','ar'],
+    ['Potassium','No. 19','k'],['Calcium','No. 20','ca']]},
+  {id:'small', t:'Smallest countries in the world', n:'By area, smallest first.', items:[
+    ['Vatican City','0.44 km²','vatican','holy see'],['Monaco','2.0 km²'],['Nauru','21 km²'],['Tuvalu','26 km²'],
+    ['San Marino','61 km²'],['Liechtenstein','160 km²'],['Marshall Islands','181 km²','marshall'],
+    ['Saint Kitts and Nevis','261 km²','st kitts','st kitts and nevis','saint kitts'],['Maldives','298 km²'],['Malta','316 km²']]},
+  {id:'dense', t:'Densest chemical elements', n:'Measured densities; superheavy synthetic elements excluded.', items:[
+    ['Osmium','22.59 g/cm³','os'],['Iridium','22.56 g/cm³','ir'],['Platinum','21.45 g/cm³','pt'],['Rhenium','21.02 g/cm³','re'],
+    ['Neptunium','20.45 g/cm³','np'],['Plutonium','19.82 g/cm³','pu'],['Gold','19.30 g/cm³','au'],['Tungsten','19.25 g/cm³','w','wolfram'],
+    ['Uranium','19.1 g/cm³','u'],['Tantalum','16.69 g/cm³','ta']]},
+  {id:'stars', t:'Brightest stars in the night sky', n:'Apparent magnitude (lower is brighter); the Sun excluded.', items:[
+    ['Sirius','−1.46','dog star'],['Canopus','−0.74'],['Alpha Centauri','−0.27','rigil kentaurus','rigil kent'],
+    ['Arcturus','−0.05'],['Vega','0.03'],['Capella','0.08'],['Rigel','0.13'],['Procyon','0.34'],
+    ['Achernar','0.46'],['Betelgeuse','~0.5','betelgeuze']]},
+  {id:'solar', t:'Largest objects in the Solar System', n:'By diameter.', items:[
+    ['The Sun','1.39m km','sun'],['Jupiter','139,820 km'],['Saturn','116,460 km'],['Uranus','50,724 km'],
+    ['Neptune','49,244 km'],['Earth','12,742 km'],['Venus','12,104 km'],['Mars','6,779 km'],
+    ['Ganymede','5,268 km'],['Titan','5,150 km']]},
+  {id:'reigns', t:'Longest-reigning English & British monarchs', n:'Since 1066. Use numbers: Henry 8 or Henry VIII.', exact:true, items:[
+    ['Elizabeth II','70 yrs','elizabeth 2','elizabeth the second','queen elizabeth'],['Victoria','63 yrs','queen victoria'],
+    ['George III','59 yrs','george 3','george the third'],['Henry III','56 yrs','henry 3','henry the third'],
+    ['Edward III','50 yrs','edward 3','edward the third'],['Elizabeth I','44 yrs','elizabeth 1','elizabeth the first'],
+    ['Henry VI','~39 yrs','henry 6','henry the sixth'],['Henry VIII','37 yrs','henry 8','henry the eighth'],
+    ['Edward I','34 yrs 7 mo','edward 1','edward the first','longshanks'],['Henry II','34 yrs 6 mo','henry 2','henry the second']]},
+  {id:'greek', t:'The first ten letters of the Greek alphabet', n:'In order.', items:[
+    ['Alpha','Α α'],['Beta','Β β'],['Gamma','Γ γ'],['Delta','Δ δ'],['Epsilon','Ε ε'],['Zeta','Ζ ζ'],
+    ['Eta','Η η'],['Theta','Θ θ'],['Iota','Ι ι'],['Kappa','Κ κ']]}
+]},
+{id:'pop', name:'Film, TV & pop culture', cats:[
+  {id:'mcu', t:'The first ten Marvel Cinematic Universe films', n:'In release order, 2008–14.', items:[
+    ['Iron Man','2008'],['The Incredible Hulk','2008','incredible hulk','hulk'],['Iron Man 2','2010'],['Thor','2011'],
+    ['Captain America: The First Avenger','2011','captain america','first avenger','the first avenger'],
+    ['The Avengers','2012','avengers','avengers assemble'],['Iron Man 3','2013'],
+    ['Thor: The Dark World','2013','dark world','thor 2','thor the dark world'],
+    ['Captain America: The Winter Soldier','2014','winter soldier','captain america 2','the winter soldier'],
+    ['Guardians of the Galaxy','2014','guardians']]},
+  {id:'bond', t:'The first ten James Bond films', n:'Official Eon films, in release order.', items:[
+    ['Dr. No','1962','doctor no'],['From Russia with Love','1963'],['Goldfinger','1964'],['Thunderball','1965'],
+    ['You Only Live Twice','1967'],['On Her Majesty\'s Secret Service','1969','ohmss'],['Diamonds Are Forever','1971'],
+    ['Live and Let Die','1973'],['The Man with the Golden Gun','1974','man with the golden gun','golden gun'],
+    ['The Spy Who Loved Me','1977','spy who loved me']]},
+  {id:'doctor', t:'The first ten Doctor Who actors', n:'The Doctors, in order.', people:true, items:[
+    ['William Hartnell','1st Doctor'],['Patrick Troughton','2nd Doctor'],['Jon Pertwee','3rd Doctor'],
+    ['Tom Baker','4th Doctor'],['Peter Davison','5th Doctor'],['Colin Baker','6th Doctor'],
+    ['Sylvester McCoy','7th Doctor'],['Paul McGann','8th Doctor'],['Christopher Eccleston','9th Doctor'],
+    ['David Tennant','10th Doctor']]},
+  {id:'pixar', t:'The first ten Pixar films', n:'In release order.', items:[
+    ['Toy Story','1995'],['A Bug\'s Life','1998','bugs life'],['Toy Story 2','1999'],['Monsters, Inc.','2001','monsters inc'],
+    ['Finding Nemo','2003'],['The Incredibles','2004','incredibles'],['Cars','2006'],['Ratatouille','2007'],
+    ['WALL-E','2008','walle'],['Up','2009']]},
+  {id:'starwars', t:'The first ten Star Wars films', n:'Live-action cinema releases, in order.', items:[
+    ['A New Hope','1977','star wars','new hope','episode iv','episode 4'],['The Empire Strikes Back','1980','empire strikes back','empire'],
+    ['Return of the Jedi','1983'],['The Phantom Menace','1999','phantom menace'],['Attack of the Clones','2002'],
+    ['Revenge of the Sith','2005'],['The Force Awakens','2015','force awakens'],['Rogue One','2016'],
+    ['The Last Jedi','2017','last jedi'],['Solo','2018','solo a star wars story']]},
+  {id:'disney', t:'The first ten Disney animated classics', n:'Walt Disney Animation, in release order. A tough one.', items:[
+    ['Snow White and the Seven Dwarfs','1937','snow white'],['Pinocchio','1940'],['Fantasia','1940'],['Dumbo','1941'],
+    ['Bambi','1942'],['Saludos Amigos','1942'],['The Three Caballeros','1944','three caballeros'],
+    ['Make Mine Music','1946'],['Fun and Fancy Free','1947'],['Melody Time','1948']]},
+  {id:'celeb', t:'The first ten I\'m a Celebrity winners', n:'In order, 2002–10.', people:true, items:[
+    ['Tony Blackburn','2002'],['Phil Tufnell','2003'],['Kerry Katona','2004','kerry mcfadden'],['Joe Pasquale','2004'],
+    ['Carol Thatcher','2005'],['Matt Willis','2006'],['Christopher Biggins','2007','biggins'],['Joe Swash','2008'],
+    ['Gino D\'Acampo','2009','dacampo','gino'],['Stacey Solomon','2010']]},
+  {id:'strictly', t:'The first ten Strictly Come Dancing winners', n:'Series 1–10 (with their professional partners).', people:true, items:[
+    ['Natasha Kaplinsky','Series 1'],['Jill Halfpenny','Series 2'],['Darren Gough','Series 3'],['Mark Ramprakash','Series 4'],
+    ['Alesha Dixon','Series 5'],['Tom Chambers','Series 6'],['Chris Hollins','Series 7'],['Kara Tointon','Series 8'],
+    ['Harry Judd','Series 9'],['Louis Smith','Series 10']]},
+  {id:'xfactor', t:'The first ten X Factor (UK) winners', n:'In order, 2004–13.', people:true, items:[
+    ['Steve Brookstein','2004'],['Shayne Ward','2005'],['Leona Lewis','2006'],['Leon Jackson','2007'],
+    ['Alexandra Burke','2008'],['Joe McElderry','2009'],['Matt Cardle','2010'],['Little Mix','2011'],
+    ['James Arthur','2012'],['Sam Bailey','2013']]},
+  {id:'pokemon', t:'The first ten Pokémon in the Pokédex', n:'National Pokédex #001–#010.', items:[
+    ['Bulbasaur','#001'],['Ivysaur','#002'],['Venusaur','#003'],['Charmander','#004'],['Charmeleon','#005'],
+    ['Charizard','#006'],['Squirtle','#007'],['Wartortle','#008'],['Blastoise','#009'],['Caterpie','#010']]}
+]}
+];
+
+/* Ten original cartoon characters: warm outlines, flat fills with darker shading, friendly faces, small looping animations (CSS in the page). */
+const AVATARS = [
+  {id:'footballer', name:'Footballer'},
+  {id:'politician', name:'Politician'},
+  {id:'couch',      name:'Couch Potato'},
+  {id:'spliff',     name:'Spliff'},
+  {id:'gum',        name:'Gum'},
+  {id:'bag',        name:'The Bag'},
+  {id:'padel',      name:'Padel'},
+  {id:'rapper',     name:'Rapper'},
+  {id:'hoop',       name:'Hoop'},
+  {id:'rugby',      name:'Rugby Ball'}
+];
+function shade(hex, f){
+  const n=parseInt(hex.slice(1),16); let r=n>>16,g=n>>8&255,b=n&255;
+  const m=v=>Math.max(0,Math.min(255,Math.round(f<1?v*f:v+(255-v)*(f-1))));
+  return '#'+[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function avatarSVG(id, size){
+  const L='#6b3a1f', K='#24160e';
+  const st=`stroke="${L}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"`;
+  const d=(Math.abs([...id].reduce((a,c)=>a*31+c.charCodeAt(0),7))%17)/10; // per-character animation offset
+  // ---- friendly face kit ----
+  const eye=(cx,cy,s=1)=>`<g class="blink" style="animation-delay:${d}s"><ellipse cx="${cx}" cy="${cy}" rx="${4.3*s}" ry="${5.4*s}" fill="${K}"/><circle cx="${cx+1.3*s}" cy="${cy-1.9*s}" r="${1.7*s}" fill="#fff"/><circle cx="${cx-1.4*s}" cy="${cy+1.9*s}" r="${.8*s}" fill="#fff" opacity=".8"/></g>`;
+  const happy=(cx,cy,s=1)=>`<path d="M${cx-4.5*s} ${cy+1.5*s} q${4.5*s} -${6*s} ${9*s} 0" fill="none" stroke="${K}" stroke-width="${2.6*s}" stroke-linecap="round"/>`;
+  const wink=(cx,cy,s=1)=>`<path d="M${cx-4.5*s} ${cy} q${4.5*s} ${3.5*s} ${9*s} 0" fill="none" stroke="${K}" stroke-width="${2.6*s}" stroke-linecap="round"/>`;
+  const lidded=(cx,cy,s,lid,white='#f4f6f7',iris=K)=>`<g><ellipse cx="${cx}" cy="${cy}" rx="${5.6*s}" ry="${5*s}" fill="${white}" stroke="${K}" stroke-width="1.6"/><circle cx="${cx+.6}" cy="${cy+1.4*s}" r="${2.6*s}" fill="${iris}"/><circle cx="${cx+1.3}" cy="${cy+.6*s}" r="${.8*s}" fill="#fff"/><path d="M${cx-6.2*s} ${cy+.4*s} A${6.2*s} ${5.6*s} 0 0 1 ${cx+6.2*s} ${cy+.4*s} Z" fill="${lid}" stroke="${K}" stroke-width="1.6"/></g>`;
+  const smile=(cx,cy,w=12)=>`<path d="M${cx-w/2} ${cy} q${w/2} ${w*.42} ${w} 0" fill="none" stroke="${K}" stroke-width="2.4" stroke-linecap="round"/>`;
+  const smirk=(cx,cy,w=12)=>`<path d="M${cx-w/2} ${cy+1} q${w*.55} ${w*.3} ${w} -${w*.25}" fill="none" stroke="${K}" stroke-width="2.4" stroke-linecap="round"/><path d="M${cx+w/2-1} ${cy-w*.25-1} l2.5 -1" stroke="${K}" stroke-width="2" stroke-linecap="round"/>`;
+  const openD=(cx,cy,w=12)=>`<path d="M${cx-w/2} ${cy} h${w} q0 ${w*.6} -${w/2} ${w*.6} q-${w/2} 0 -${w/2} -${w*.6}Z" fill="#7a2620" stroke="${K}" stroke-width="1.6" stroke-linejoin="round"/><path d="M${cx-w*.28} ${cy+w*.45} q${w*.28} -${w*.28} ${w*.56} 0 q-${w*.1} ${w*.15} -${w*.28} ${w*.15} q-${w*.18} 0 -${w*.28} -${w*.15}Z" fill="#f08b8b"/>`;
+  const tongue=(cx,cy,w=12)=>`<path d="M${cx-w/2} ${cy} q${w/2} ${w*.35} ${w} 0" fill="none" stroke="${K}" stroke-width="2.4" stroke-linecap="round"/><path d="M${cx+w*.05} ${cy+w*.16} q0 ${w*.5} ${w*.3} ${w*.5} q${w*.3} 0 ${w*.28} -${w*.55}" fill="#f08b8b" stroke="${K}" stroke-width="1.4"/>`;
+  const brow=(x,y,tilt=0,w=9)=>`<path d="M${x-w/2} ${y+tilt} q${w/2} -3.5 ${w} ${-tilt}" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round"/>`;
+  const blush=(x1,x2,y)=>`<ellipse cx="${x1}" cy="${y}" rx="4.2" ry="2.4" fill="#ff8f80" opacity=".55"/><ellipse cx="${x2}" cy="${y}" rx="4.2" ry="2.4" fill="#ff8f80" opacity=".55"/>`;
+  const shadow=`<ellipse cx="50" cy="96" rx="30" ry="3.5" fill="#000" opacity=".22"/>`;
+  const head=(skin)=>{const sD=shade(skin,.86);return `<ellipse cx="23" cy="55" rx="6" ry="8" fill="${skin}" ${st}/><ellipse cx="77" cy="55" rx="6" ry="8" fill="${skin}" ${st}/><path d="M25 48 C25 30 36 22 50 22 C64 22 75 30 75 48 C75 67 64 79 50 79 C36 79 25 67 25 48Z" fill="${skin}" ${st}/><path d="M64 31 C71 39 73 50 71 60 C69 69 64 74 58 77 C65 68 68 58 67 48 C66 41 65 36 64 31Z" fill="${sD}" opacity=".5"/><path d="M49 57 q-2.5 3.5 0 5 q2 .8 3.5 0" fill="none" stroke="${shade(skin,.68)}" stroke-width="1.5" stroke-linecap="round"/>`;};
+  let g='';
+  switch(id){
+    case 'footballer': {
+      const s='#e8b48c';
+      g = shadow + `<g class="bob"><path d="M22 100 C24 86 36 80 50 80 C64 80 76 86 78 100Z" fill="#e2453a" ${st}/><path d="M41 81 L50 91 L59 81" fill="#fff" ${st}/><path d="M32 85 v15 M68 85 v15" stroke="#fff" stroke-width="3"/><text x="50" y="99" text-anchor="middle" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="8" fill="#fff">10</text>`
+        + head(s)
+        + `<path d="M26 44 C22 26 36 15 54 15 C70 16 80 27 76 44 C71 35 63 31 53 32 C45 33 41 29 39 24 C35 31 31 38 26 44Z" fill="#3a2316" ${st}/><path d="M52 15 C58 8 68 8 72 12 C66 12 62 14 60 18Z" fill="#3a2316" ${st}/><path d="M39 24 C44 30 50 30 58 27" fill="none" stroke="#21140c" stroke-width="1.6"/>`
+        + brow(40,42,-1) + brow(60,41,1) + eye(40,51) + wink(60,52) + smirk(50,66,13) + blush(36,65,61) + `</g>`
+        + `<g class="kick"><circle cx="85" cy="74" r="9" fill="#fff" ${st}/><path d="M85 68 l4.4 3.2 -1.7 5 h-5.4 l-1.7 -5Z" fill="${K}"/></g>`;
+      break; }
+    case 'politician': {
+      const s='#f1c6a3';
+      g = shadow + `<g class="bob"><path d="M18 100 C20 86 34 80 50 80 C66 80 80 86 82 100Z" fill="#2c3e66" ${st}/><path d="M42 80 L50 89 L58 80Z" fill="#fff" ${st}/><path d="M48 85 h4 l2.4 15 h-8.8Z" fill="#c8302b" ${st}/><path d="M42 80 L37 100 M58 80 L63 100" stroke="#1d2a47" stroke-width="2"/>`
+        + head(s)
+        + `<path d="M26 45 C22 27 35 17 50 17 C67 17 79 27 75 45 C74 37 70 31 64 29 C54 31 40 31 34 27 C30 31 27 37 26 45Z" fill="#b5babe" ${st}/><path d="M34 27 C44 31 54 31 64 29" fill="none" stroke="#8a9095" stroke-width="1.6"/><path d="M40 21 L37 30" stroke="#8a9095" stroke-width="1.6"/>`
+        + brow(40,40,-2,10) + brow(60,43,0,9) + eye(40,51) + eye(60,51)
+        + `<path d="M40 64 q10 7 20 0 q-2 6 -10 6 q-8 0 -10 -6Z" fill="#fff" stroke="${K}" stroke-width="1.6" stroke-linejoin="round"/><path d="M45 65.6 v3.6 M50 66.2 v3.8 M55 65.6 v3.6" stroke="#cfd5d9" stroke-width="1"/>`
+        + `<circle cx="30" cy="89" r="5.5" fill="#2f7ad1" ${st}/><circle cx="30" cy="89" r="2.4" fill="#fff"/></g>`
+        + `<g class="thumb"><rect x="72" y="80" width="13" height="12" rx="4" fill="${s}" ${st}/><rect x="75" y="70" width="5.5" height="13" rx="2.75" fill="${s}" ${st}/><path d="M68 92 h20 v8 h-20Z" fill="#2c3e66" ${st}/></g>`
+        + `<path class="sparkle" d="M84 44 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5Z" fill="#fff"/>`;
+      break; }
+    case 'couch': {
+      g = shadow + `<rect x="6" y="58" width="88" height="30" rx="8" fill="#c8453b" ${st}/><rect x="4" y="50" width="16" height="40" rx="7" fill="#d9574c" ${st}/><rect x="80" y="50" width="16" height="40" rx="7" fill="#d9574c" ${st}/><rect x="12" y="88" width="6" height="7" fill="#6b3a1f"/><rect x="82" y="88" width="6" height="7" fill="#6b3a1f"/>`
+        + `<g class="breathe"><path d="M24 66 C18 44 30 24 52 24 C72 24 82 40 78 60 C76 76 62 82 48 82 C34 82 26 76 24 66Z" fill="#c99659" ${st}/><path d="M66 32 C76 42 78 56 72 70 C68 76 62 79 56 80 C66 70 70 56 66 32Z" fill="#a8783f" opacity=".6"/>`
+        + `<g fill="#9a6a34"><circle cx="34" cy="38" r="1.8"/><circle cx="64" cy="36" r="1.5"/><circle cx="30" cy="62" r="1.6"/><circle cx="68" cy="66" r="1.8"/></g>`
+        + `<path d="M36 50 q5 3 10 0 M55 50 q5 3 10 0" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round"/>` + smile(51,60,12) + blush(37,65,58) + `</g>`
+        + `<path d="M28 66 q-4 6 -6 10" fill="none" stroke="${L}" stroke-width="2.4" stroke-linecap="round"/><rect x="14" y="70" width="12" height="15" rx="2" fill="#f2b632" ${st}/><path d="M16 70 l2 -4 3 3 2 -4 2 4" fill="#f7d36b" ${st}/>`
+        + `<path d="M72 68 l10 -8" stroke="${L}" stroke-width="2.4" stroke-linecap="round"/><rect x="79" y="53" width="7" height="14" rx="2" transform="rotate(-35 82 60)" fill="#333" ${st}/><circle class="led" cx="82.5" cy="57" r="1.3" fill="#ff5d5d"/>`
+        + `<g class="zzz"><text x="70" y="22" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="9" fill="#cfe3e0">z</text><text x="78" y="13" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="12" fill="#cfe3e0">Z</text></g>`;
+      break; }
+    case 'spliff': {
+      g = shadow + `<g class="sway"><path d="M26 36 L74 36 L62 90 L38 90Z" fill="#f6f1e6" ${st}/><path d="M66 42 L58 88" stroke="#ddd5c4" stroke-width="2.4"/><path d="M39.5 80 L60.5 80 L59 90 L41 90Z" fill="#d9b98a" ${st}/><path d="M42 83.5 h16 M42 87 h16" stroke="#b9945f" stroke-width="1.3"/>`
+        + `<path d="M26 36 Q50 28 74 36 L73 41 Q50 34 27 41Z" fill="#555" ${st}/><g class="ember"><path d="M33 34 q6 -4 11 -1 q6 -3 11 0 q6 -3 11 1" fill="none" stroke="#ff7a2e" stroke-width="3"/><circle cx="44" cy="31" r="2.2" fill="#ffcf4d"/><circle cx="58" cy="31.5" r="1.8" fill="#ffcf4d"/></g>`
+        + lidded(41,55,1.2,'#ece5d6','#ff6f66','#8f1d17') + lidded(59,55,1.2,'#ece5d6','#ff6f66','#8f1d17')
+        + `<path d="M36.5 57 l3 -1 M41 59 l1.5 2 M57.5 59 l-1 2 M62 56.5 l3 1" stroke="#b8241c" stroke-width="1.2" stroke-linecap="round"/>`
+        + smirk(50,67,12) + blush(35,65,64) + `</g>`
+        + `<g class="smoke"><path d="M48 26 C40 18 56 14 48 7" fill="none" stroke="#d6e4e2" stroke-width="3" stroke-linecap="round"/></g><g class="smoke s2"><path d="M60 24 C67 19 62 12 69 9" fill="none" stroke="#d6e4e2" stroke-width="2.4" stroke-linecap="round"/></g>`;
+      break; }
+    case 'gum': {
+      g = shadow + `<g class="bob"><rect x="34" y="12" width="9" height="22" rx="1.5" fill="#d6dde2" ${st}/><rect x="45" y="8" width="9" height="26" rx="1.5" fill="#e9eef1" ${st}/><rect x="56" y="14" width="9" height="20" rx="1.5" fill="#d6dde2" ${st}/>`
+        + `<rect x="24" y="26" width="52" height="66" rx="7" fill="#4fc79a" ${st}/><rect x="24" y="26" width="52" height="12" rx="7" fill="#3aa880" ${st}/><path d="M24 80 h52" stroke="#3aa880" stroke-width="10"/><text x="50" y="88" text-anchor="middle" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="9" fill="#e9fff6">MINT</text><path d="M68 44 C72 52 72 62 68 72" stroke="#86e0be" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
+        + brow(39,44,1) + brow(61,44,-1) + happy(39,52) + happy(61,52) + blush(33,67,60)
+        + `<circle cx="50" cy="65" r="2.6" fill="#7a2620"/></g>`
+        + `<g class="bubble"><circle cx="50" cy="67" r="9" fill="#ff9ac2" ${st}/><path d="M45 63 q3 -3 6 -2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></g>`;
+      break; }
+    case 'bag': {
+      g = shadow + `<g class="jitter"><path d="M24 22 H76 V84 Q76 92 68 92 H32 Q24 92 24 84Z" fill="#e3f1f6" fill-opacity=".55" ${st}/><path d="M24 22 H76 V30 H24Z" fill="#fff" ${st}/><path d="M24 26 H76" stroke="#d9453c" stroke-width="2"/><path d="M24 29 H76" stroke="#2f7ad1" stroke-width="1.6"/>`
+        + `<path d="M28 88 C30 70 40 64 50 64 C62 64 70 70 72 88 Q70 90 66 90 H34 Q30 90 28 88Z" fill="#fbfbfb" stroke="#cfd8dc" stroke-width="1.4"/><path d="M38 74 q4 -3 8 0 M54 76 q4 -3 8 0" stroke="#e1e7ea" stroke-width="1.4" fill="none"/>`
+        + `<path d="M66 36 C70 44 70 54 68 60" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>`
+        + brow(41,38,2) + brow(59,38,-2)
+        + `<ellipse cx="41" cy="46" rx="5.6" ry="5" fill="#f4f6f7" stroke="${K}" stroke-width="1.6"/><ellipse cx="59" cy="46" rx="5.6" ry="5" fill="#f4f6f7" stroke="${K}" stroke-width="1.6"/><g class="pupils"><circle cx="41" cy="46.5" r="2.6" fill="${K}"/><circle cx="59" cy="46.5" r="2.6" fill="${K}"/></g>`
+        + `<path d="M43 57 q2 -2 4 0 t4 0 t4 0" fill="none" stroke="${K}" stroke-width="2" stroke-linecap="round"/></g>`
+        + `<path class="sweat" d="M31 36 q-5 7 -1.6 10.4 q3.4 2 4.4 -2.6 q0 -3.6 -2.8 -7.8Z" fill="#7fd0ff" ${st}/>`;
+      break; }
+    case 'padel': {
+      g = shadow + `<g class="swing"><rect x="44" y="76" width="12" height="20" rx="4" fill="#2b2b33" ${st}/><path d="M44 82 h12 M44 88 h12" stroke="#4a4a55" stroke-width="1.6"/><path d="M40 70 L46 78 H54 L60 70Z" fill="#2f7ad1" ${st}/>`
+        + `<ellipse cx="50" cy="42" rx="30" ry="34" fill="#2f7ad1" ${st}/><ellipse cx="50" cy="42" rx="25" ry="29" fill="#4a93e6"/><path d="M28 30 C30 20 38 12 48 10" fill="none" stroke="#9cc8f5" stroke-width="2.6" stroke-linecap="round"/>`
+        + `<g fill="#2565ad">${[[38,22],[50,19],[62,22],[31,33],[69,33],[31,48],[69,48],[36,60],[64,60],[44,67],[56,67]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2"/>`).join('')}</g>`
+        + brow(40,35,2) + brow(60,35,-2) + eye(40,43) + eye(60,43) + openD(50,51,12) + blush(34,66,50) + `</g>`
+        + `<g class="bounce"><circle cx="84" cy="80" r="8" fill="#d8f04a" ${st}/><path d="M78 76 q6 4 0 9 M90 76 q-6 4 0 9" fill="none" stroke="#fff" stroke-width="1.6"/></g>`;
+      break; }
+    case 'rapper': {
+      const s='#9b6544';
+      g = shadow + `<g class="nod"><path d="M22 100 C24 86 36 80 50 80 C64 80 76 86 78 100Z" fill="#1f1f26" ${st}/>`
+        + head(s)
+        + `<path d="M23 43 C22 25 34 15 50 15 C66 15 78 25 77 43Z" fill="#e2453a" ${st}/><rect x="21" y="37" width="58" height="10" rx="4" fill="#c8302b" ${st}/><path d="M28 39.5 v5 M34 39.5 v5 M40 39.5 v5 M46 39.5 v5 M52 39.5 v5 M58 39.5 v5 M64 39.5 v5 M70 39.5 v5" stroke="#a82621" stroke-width="1.4"/><circle cx="50" cy="14" r="4" fill="#e2453a" ${st}/>`
+        + `<path d="M27 52 H73" stroke="${K}" stroke-width="2.4"/><path d="M29 49 h18 v6 q0 6 -9 6 q-9 0 -9 -6Z" fill="#111" ${st}/><path d="M53 49 h18 v6 q0 6 -9 6 q-9 0 -9 -6Z" fill="#111" ${st}/>`
+        + `<g class="glint"><path d="M33 51 l5 -1.5 M57 51 l5 -1.5" stroke="#9fdcff" stroke-width="2" stroke-linecap="round"/></g>`
+        + smirk(50,67,12) + `</g>`
+        + `<g class="chain"><path d="M34 82 Q50 100 66 82" fill="none" stroke="#f2b632" stroke-width="3.4"/><path d="M34 82 Q50 100 66 82" fill="none" stroke="#c98a12" stroke-width="1" stroke-dasharray="2 2"/><circle cx="50" cy="92" r="6" fill="#f2b632" ${st}/><text x="50" y="95" text-anchor="middle" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="7" fill="#7a5208">$</text></g>`
+        + `<path class="sparkle" d="M60 88 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2Z" fill="#fff"/>`;
+      break; }
+    case 'hoop': {
+      g = shadow + `<rect x="46" y="74" width="8" height="22" fill="#8e9ba5" ${st}/>`
+        + `<g class="bob"><rect x="14" y="12" width="72" height="50" rx="5" fill="#f4f6f7" ${st}/><rect x="36" y="36" width="28" height="18" fill="none" stroke="#e2453a" stroke-width="2.6"/>`
+        + brow(38,22,1) + brow(62,22,-1) + eye(38,30) + eye(62,30) + openD(50,40,10) + blush(30,70,38) + `</g>`
+        + `<g class="swish"><circle cx="50" cy="58" r="8" fill="#f07a1e" ${st}/><path d="M42 58 h16 M50 50 v16" fill="none" stroke="${L}" stroke-width="1.1"/></g>`
+        + `<ellipse cx="50" cy="60" rx="16" ry="4" fill="none" stroke="#f07a1e" stroke-width="3.4"/><path d="M35 61 L40 78 L46 62 L50 79 L54 62 L60 78 L65 61 M38 70 h24 M40 76 h20" fill="none" stroke="#fff" stroke-width="1.4"/>`;
+      break; }
+    case 'rugby': {
+      g = shadow + `<g class="wobble"><g transform="rotate(-18 50 52)"><ellipse cx="50" cy="52" rx="36" ry="25" fill="#a0612d" ${st}/><path d="M26 34 C34 30 44 30 50 30 C40 40 38 64 50 74 C40 74 32 72 26 68" fill="#b9753d" opacity=".55"/><path d="M22 46 C24 41 26 39 28 37 M78 58 C76 63 74 65 72 67" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M38 28 h24" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M42 24 v8 M48 24 v8 M54 24 v8 M60 24 v8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`
+        + brow(38,49,1) + brow(57,48,-1) + eye(38,57) + wink(57,58) + tongue(47,66,12) + blush(31,64,64) + `</g>`;
+      break; }
+  }
+  const px = size ? ` width="${size}" height="${size}"` : '';
+  return `<svg viewBox="0 0 100 100"${px} aria-hidden="true" class="av av-${id}">${g}</svg>`;
+}
+
+const ART_URL = 'https://claude.ai/artifact/VBgkotb1UX47rB9Yz9ZrPe';
+const CATS = GROUPS.flatMap(g=>g.cats.map(c=>Object.assign(c,{group:g.id})));
+const byId = id => CATS.find(c=>c.id===id);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = (k,v) => { try { if (v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v) } catch(e) { return null } };
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a };
+const cleanName = s => String(s||'').replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁯]/g,'').trim().slice(0,16);
+
+const avOk = id => AVATARS.some(a=>a.id===id) ? id : AVATARS[0].id;
+let myAv = avOk(store('pyr-av') || AVATARS[Math.floor(Math.random()*AVATARS.length)].id);
+function drawAvPicker(){
+  $('jAv').innerHTML = AVATARS.map(a=>`<button type="button" data-av="${a.id}" aria-pressed="${a.id===myAv}" aria-label="${esc(a.name)}">${avatarSVG(a.id)}</button>`).join('');
+}
+$('jAv').addEventListener('click',e=>{const b=e.target.closest('[data-av]'); if(!b) return; myAv=avOk(b.dataset.av); store('pyr-av',myAv); drawAvPicker();});
+const chip = (name, av, cls='') => `<span class="pl ${cls}">${avatarSVG(avOk(av))}${esc(name)}</span>`;
+const lbRow = (s, extra='', cls='') => `<li class="${cls}"><span class="n">${avatarSVG(avOk(s[3]))}${esc(cleanName(s[0]))}</span><span class="s">${+s[1]||0}${extra}</span></li>`;
+
+function ranksOf(c){
+  return c.items.map((it,i)=>{
+    if (!c.ties) return String(i+1);
+    const first=c.items.findIndex(o=>o[1]===it[1]);
+    return (c.items.filter(o=>o[1]===it[1]).length>1?'=':'')+(first+1);
+  });
+}
+// a stone is right if it sits in a slot with the same rank (so tied answers can swap)
+function scoreOf(c, placed){
+  const r=ranksOf(c); let n=0;
+  for (let s=0;s<10;s++){ const it=placed[s]; if (it>=0 && r[it]===r[s]) n++; }
+  return n;
+}
+
+/* ---------- board: shared by solo, player and TV ---------- */
+// play: {cat, order, placed[slot]=item|-1, sel:item|null, locked, revealed}
+function newPlay(cat, order){ return {cat, order: order||shuffle([...Array(10).keys()]), placed:Array(10).fill(-1), sel:null, locked:false, revealed:false, last:-1}; }
+
+function boardHTML(p, opts={}){
+  const c=p.cat, r=ranksOf(c), rows=[[0],[1,2],[3,4,5],[6,7,8,9]];
+  const showAll=opts.showAnswers; // TV reveal: correct answers in place
+  const pyr = rows.map(row=>'<div class="r">'+row.map(s=>{
+    let it = showAll ? s : p.placed[s];
+    let cls='slot', inner=`<span class="rk">${r[s]}</span>`;
+    if (it>=0){
+      cls+=' full';
+      if (p.revealed && !showAll){ cls += r[it]===r[s] ? ' right' : ' wrong'; }
+      if (s===p.last) cls+=' drop';
+      inner += `<div class="nm">${esc(c.items[it][0])}</div>`;
+      if (showAll || (p.revealed && r[it]===r[s])) { if (c.items[it][1]) inner += `<div class="st">${esc(c.items[it][1])}</div>`; }
+      if (p.revealed && !showAll && r[it]!==r[s]) inner += `<div class="ans">Answer: ${esc(c.items[s][0])}</div>`;
+    } else if (p.revealed){
+      cls+=' wrong'; inner += `<div class="ans">Answer: ${esc(c.items[s][0])}</div>`;
+    }
+    if (p.sel!==null && p.placed[s]===p.sel) cls+=' sel';
+    const tag = opts.static ? 'div' : 'button';
+    const dis = (p.locked||p.revealed) && !opts.static ? ' disabled' : '';
+    return `<${tag} class="${cls}" ${opts.static?'':`type="button" data-slot="${s}"`}${dis} aria-label="Rank ${r[s]}${it>=0?': '+esc(c.items[it][0]):', empty'}">${inner}</${tag}>`;
+  }).join('')+'</div>').join('');
+  let tray='';
+  if (!opts.static){
+    const left=p.order.filter(i=>!p.placed.includes(i));
+    tray = `<div class="tray${left.length?'':' empty'}" data-tray="1">${left.map(i=>`<button type="button" class="chip${p.sel===i?' sel':''}" data-item="${i}"${p.locked||p.revealed?' disabled':''}>${esc(c.items[i][0])}</button>`).join('')}</div>`;
+  }
+  const hint = opts.static ? '' : `<p class="hint">${p.revealed?'':p.locked?'Locked in. Waiting for the reveal…':p.sel!==null?'Now tap a spot on the pyramid (or the tray to take it back).':'Tap a stone, then tap where it goes. Number 1 is the peak.'}</p>`;
+  return `<div class="cat"><h2>${esc(c.t)}</h2><p>${esc(c.n)}</p></div><div class="pyr">${pyr}</div><div class="ground"></div>${tray}${hint}`;
+}
+
+function boardClick(p, e, onChange){
+  if (p.locked || p.revealed) return;
+  const slotEl=e.target.closest('[data-slot]'), chipEl=e.target.closest('[data-item]'), trayEl=e.target.closest('[data-tray]');
+  p.last=-1;
+  if (chipEl){ const it=+chipEl.dataset.item; p.sel = p.sel===it ? null : it; }
+  else if (slotEl){
+    const s=+slotEl.dataset.slot, cur=p.placed[s];
+    if (p.sel!==null){
+      const from=p.placed.indexOf(p.sel);
+      if (from>=0) p.placed[from]=cur; // swap if moving between slots
+      p.placed[s]=p.sel; p.sel=null; p.last=s;
+    } else if (cur>=0) p.sel=cur;
+  } else if (trayEl && p.sel!==null){
+    const from=p.placed.indexOf(p.sel); if (from>=0) p.placed[from]=-1; p.sel=null;
+  } else return;
+  onChange();
+}
+
+/* ---------- category picker (solo + host) ---------- */
+function picker(groupsEl, selEl, getId, setId){
+  const draw=()=>{
+    const cur=byId(getId()); const g=GROUPS.find(x=>x.id===cur.group);
+    groupsEl.innerHTML=GROUPS.map(x=>`<button type="button" data-g="${x.id}" aria-pressed="${x.id===g.id}">${esc(x.name)}</button>`).join('');
+    selEl.innerHTML=g.cats.map(c=>`<option value="${c.id}">${esc(c.t)}</option>`).join('');
+    selEl.value=cur.id;
+  };
+  groupsEl.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const g=GROUPS.find(x=>x.id===b.dataset.g);if(g){setId(g.cats[0].id);draw()}});
+  selEl.addEventListener('change',()=>{setId(selEl.value);draw()});
+  return draw;
+}
+const randomCat = (not) => { let c; do{c=CATS[Math.floor(Math.random()*CATS.length)]}while(c.id===not); return c.id; };
+
+/* ---------- views ---------- */
+let view='home';
+function show(v){
+  view=v;
+  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin']]) $(id).classList.toggle('hidden',k!==v);
+  $('homeBtn').classList.toggle('hidden',v==='home');
+  $('tagline').textContent = v==='host' ? 'Host screen: put this on the TV.' : v==='join' ? 'Game night on your phone.' : 'Every answer is shown. Can you put them in the right order?';
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin('');
+}));
+$('homeBtn').addEventListener('click',()=>{ leaveOnline(); document.body.classList.remove('tv'); try{ if(document.fullscreenElement) document.exitFullscreen() }catch(e){} show('home'); try{history.replaceState(null,'',location.pathname+location.search)}catch(e){} });
+
+/* ---------- SOLO ---------- */
+let solo=null, soloCat='pl';
+const drawSoloPicker = picker($('sGroups'), $('sCat'), ()=>soloCat, id=>{ startSolo(id) });
+function startSolo(id){
+  soloCat = byId(id) ? id : 'pl'; store('pyr-cat',soloCat);
+  solo=newPlay(byId(soloCat)); show('solo'); drawSoloPicker(); renderSolo();
+  $('sResult').classList.add('hidden');
+}
+function renderSolo(){
+  $('sBoard').innerHTML=boardHTML(solo);
+  const full=!solo.placed.includes(-1);
+  $('sCheck').disabled=!full||solo.revealed; $('sClear').disabled=solo.revealed;
+}
+$('sBoard').addEventListener('click',e=>boardClick(solo,e,renderSolo));
+$('sClear').addEventListener('click',()=>{ solo.placed.fill(-1); solo.sel=null; renderSolo(); });
+$('sCheck').addEventListener('click',()=>{
+  solo.revealed=true; solo.sel=null; solo.last=-1; renderSolo();
+  const n=scoreOf(solo.cat,solo.placed);
+  const best=+store('pyr-best-'+solo.cat.id)||0; if(n>best) store('pyr-best-'+solo.cat.id,n);
+  $('sScore').textContent=`${n} / 10`;
+  $('sMsg').textContent=(n===10?'Perfect pyramid!':n>=7?'Brilliant ranking.':n>=4?'Solid effort.':'The stars weren\'t aligned this time.')+(n>best&&best?' New personal best!':best&&n<=best?` Your best here: ${best}/10.`:'');
+  $('sResult').classList.remove('hidden');
+});
+$('sAgain').addEventListener('click',()=>startSolo(soloCat));
+$('sNext').addEventListener('click',()=>{ const g=GROUPS.find(x=>x.id===byId(soloCat).group); const i=g.cats.findIndex(c=>c.id===soloCat); startSolo(g.cats[(i+1)%g.cats.length].id); });
+$('sRandom').addEventListener('click',()=>startSolo(randomCat(soloCat)));
+
+/* ---------- half-time mini-game content ---------- */
+const MG_LIST = [
+  {id:'spot',   name:'Spot the Difference', color:'#b9a6f5', rule:'Two pictures on the TV. Tap the 3 changes on your phone. First to find all 3 wins.'},
+  {id:'five',   name:'5-Second Challenge',  color:'#e6d27a', rule:'Name 3 things in 5 seconds. Most correct wins; fastest breaks a tie.'},
+  {id:'finish', name:'Finish the Sentence', color:'#72d0cc', rule:'Finish the sentence anonymously, then vote for the funniest. Most votes wins.'},
+  {id:'song',   name:'Guess the Song',      color:'#8ab4f8', rule:'Emoji clues for a song title. Type the song and the artist. First correct wins.'},
+  {id:'memory', name:'The Memory Test',     color:'#a6d9a0', rule:'15 objects on the TV for 10 seconds. Then type as many as you remember.'},
+  {id:'who',    name:'Who Am I?',           color:'#f2a97e', rule:'Clues appear one by one, hardest first. First correct guess wins.'},
+  {id:'hl',     name:'Higher or Lower',     color:'#f28fb1', rule:'Is the next number higher or lower? One wrong answer and you\'re out. Last one standing wins.'}
+];
+
+const L_COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda|antigua','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina|bosnia','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Canada','Cape Verde|cabo verde','Central African Republic|car','Chad','Chile','China','Colombia','Comoros','Congo|republic of the congo','DR Congo|drc|democratic republic of the congo','Costa Rica','Croatia','Cuba','Cyprus','Czechia|czech republic','Denmark','Djibouti','Dominica','Dominican Republic','East Timor|timor leste','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini|swaziland','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland|republic of ireland|eire','Israel','Italy','Ivory Coast|cote divoire','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar|burma','Namibia','Nauru','Nepal','Netherlands|holland','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia|macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis|st kitts','Saint Lucia|st lucia','Saint Vincent and the Grenadines|st vincent','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea|korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Togo','Tonga','Trinidad and Tobago|trinidad','Tunisia','Turkey|turkiye','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates|uae','United Kingdom|uk|great britain|britain','United States|usa|us|america','Uruguay','Uzbekistan','Vanuatu','Vatican City|vatican','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','England','Scotland','Wales','Northern Ireland'];
+const L_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+const L_FRUITS = ['Apple','Apricot','Avocado','Banana','Blackberry','Blackcurrant','Blueberry','Cantaloupe','Cherry','Clementine','Coconut','Cranberry','Date','Dragon fruit|dragonfruit','Durian','Fig','Gooseberry','Grape','Grapefruit','Guava','Honeydew','Jackfruit','Kiwi|kiwi fruit','Kumquat','Lemon','Lime','Lychee','Mandarin','Mango','Melon','Nectarine','Olive','Orange','Papaya','Passion fruit','Peach','Pear','Persimmon','Pineapple','Plum','Pomegranate','Quince','Raspberry','Redcurrant','Satsuma','Star fruit','Strawberry','Tangerine','Tomato','Watermelon'];
+const L_ANIMALS = ['Aardvark','Alligator','Alpaca','Ant','Anteater','Antelope','Armadillo','Badger','Bat','Bear','Beaver','Bee','Beetle','Bison','Buffalo','Butterfly','Camel','Cat','Caterpillar','Cheetah','Chicken','Chimpanzee','Chipmunk','Cobra','Cow','Crab','Crocodile','Crow','Deer','Dog','Dolphin','Donkey','Dove','Duck','Eagle','Eel','Elephant','Elk','Emu','Falcon','Ferret','Flamingo','Fly','Fox','Frog','Gazelle','Gecko','Gerbil','Giraffe','Goat','Goldfish','Goose','Gorilla','Grasshopper','Guinea pig','Hamster','Hare','Hawk','Hedgehog','Heron','Hippo|hippopotamus','Horse','Hyena','Iguana','Jaguar','Jellyfish','Kangaroo','Koala','Komodo dragon','Ladybird|ladybug','Lemur','Leopard','Lion','Lizard','Llama','Lobster','Lynx','Meerkat','Mole','Monkey','Moose','Mosquito','Mouse','Octopus','Orangutan','Ostrich','Otter','Owl','Ox','Panda','Panther','Parrot','Peacock','Pelican','Penguin','Pig','Pigeon','Platypus','Polar bear','Porcupine','Puma','Rabbit','Raccoon','Rat','Raven','Reindeer','Rhino|rhinoceros','Robin','Salmon','Scorpion','Seal','Shark','Sheep','Shrimp|prawn','Skunk','Sloth','Slug','Snail','Snake','Sparrow','Spider','Squid','Squirrel','Starfish','Stingray','Swan','Tiger','Toad','Tortoise','Toucan','Turkey','Turtle','Vulture','Walrus','Wasp','Weasel','Whale','Wolf','Wombat','Woodpecker','Worm','Yak','Zebra'];
+const L_COLOURS = ['Red','Orange','Yellow','Green','Blue','Purple','Pink','Brown','Black','White','Grey|gray','Silver','Gold','Beige','Turquoise','Teal','Navy','Maroon','Burgundy','Lilac','Lavender','Violet','Indigo','Magenta','Cyan','Crimson','Scarlet','Olive','Lime','Mint','Peach','Coral','Cream','Ivory','Khaki','Mustard','Amber','Bronze','Charcoal','Aqua','Tan','Plum','Ruby','Emerald','Sapphire'];
+const L_CHOC = ['Mars','Snickers','Twix','Bounty','Milky Way','Galaxy','Dairy Milk|cadbury dairy milk','Wispa','Twirl','Flake','Crunchie','Double Decker','Boost','Picnic','Fudge','Curly Wurly','Toblerone','KitKat|kit kat','Yorkie','Aero','Lion','Toffee Crisp','Drifter','Turkish Delight|frys turkish delight','Caramac','Topic','Star Bar','Freddo','Time Out','Maltesers','Ripple','Caramel|cadbury caramel','Marathon','Milkybar','Hersheys|hershey','Reeses|reeses cups','Butterfinger','Baby Ruth','Three Musketeers|3 musketeers','Kinder Bueno|bueno','Daim|dime','Munchies','Rolo','Buttons','Lindt','Ferrero Rocher','Fruit and Nut','Whole Nut','Chomp','Oreo bar','Milka','Ritter Sport','Tony\'s Chocolonely|tonys','Penguin','Club','Breakaway','Blue Riband','Fry\'s Chocolate Cream|chocolate cream','Revels','Minstrels','Smarties','Galaxy Caramel'];
+const L_CARS = ['Alfa Romeo','Aston Martin','Audi','Bentley','BMW','Bugatti','Buick','BYD','Cadillac','Chevrolet|chevy','Chrysler','Citroen','Cupra','Dacia','Dodge','Ferrari','Fiat','Ford','Genesis','GMC','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lada','Lamborghini','Land Rover|range rover','Lexus','Lincoln','Lotus','Maserati','Mazda','McLaren','Mercedes|mercedes benz','MG','Mini','Mitsubishi','Nissan','Opel','Pagani','Peugeot','Polestar','Porsche','Renault','Rolls-Royce|rolls royce','Saab','Seat','Skoda','Smart','Subaru','Suzuki','Tesla','Toyota','Vauxhall','Volkswagen|vw','Volvo','Rivian','Koenigsegg'];
+const L_SPORTS = ['Football|soccer','Rugby','Cricket','Tennis','Golf','Basketball','Baseball','Hockey|ice hockey|field hockey','Boxing','Swimming','Athletics','Cycling','Rowing','Sailing','Snooker','Darts','Badminton','Squash','Padel','Table tennis|ping pong','Volleyball','Netball','Handball','Gymnastics','Judo','Karate','Taekwondo','Fencing','Archery','Wrestling','Skiing','Snowboarding','Surfing','Skateboarding','Climbing|rock climbing','Triathlon','Marathon','Polo','Water polo','Lacrosse','Bowling','Curling','Bobsleigh','Diving','Equestrian|horse riding','Horse racing','Formula 1|f1|motor racing','American football|nfl','Softball','Weightlifting','Canoeing','Kayaking','MMA','Rounders','Hurling','Gaelic football','Pickleball','Kabaddi','Ultimate frisbee|frisbee','Sumo'];
+const L_CLUBS = ['Arsenal','Aston Villa|villa','Barnsley','Birmingham City|birmingham','Blackburn Rovers|blackburn','Blackpool','Bolton Wanderers|bolton','Bournemouth|afc bournemouth','Bradford City|bradford','Brentford','Brighton|brighton and hove albion','Burnley','Cardiff City|cardiff','Charlton Athletic|charlton','Chelsea','Coventry City|coventry','Crystal Palace|palace','Derby County|derby','Everton','Fulham','Huddersfield Town|huddersfield','Hull City|hull','Ipswich Town|ipswich','Leeds United|leeds','Leicester City|leicester','Liverpool','Luton Town|luton','Manchester City|man city','Manchester United|man utd|man united','Middlesbrough|boro','Newcastle United|newcastle','Norwich City|norwich','Nottingham Forest|forest','Oldham Athletic|oldham','Portsmouth','Queens Park Rangers|qpr','Reading','Sheffield United','Sheffield Wednesday','Southampton','Stoke City|stoke','Sunderland','Swansea City|swansea','Swindon Town|swindon','Tottenham Hotspur|tottenham|spurs','Watford','West Bromwich Albion|west brom','West Ham United|west ham','Wigan Athletic|wigan','Wimbledon','Wolverhampton Wanderers|wolves'];
+const L_VEG = ['Artichoke','Asparagus','Aubergine|eggplant','Beetroot|beet','Broccoli','Brussels sprout|sprouts','Butternut squash|squash','Cabbage','Carrot','Cauliflower','Celery','Courgette|zucchini','Cucumber','Garlic','Green bean|green beans','Kale','Leek','Lettuce','Mushroom','Okra','Onion','Parsnip','Pea|peas','Pepper|bell pepper','Potato','Pumpkin','Radish','Spinach','Spring onion','Swede','Sweet potato','Sweetcorn|corn','Turnip','Watercress','Yam','Chilli|chili','Shallot','Fennel','Pak choi|bok choy','Rocket|arugula'];
+const FIVE_PROMPTS = [
+  {p:'3 countries', l:L_COUNTRIES}, {p:'3 US states', l:L_STATES}, {p:'3 fruits', l:L_FRUITS},
+  {p:'3 animals', l:L_ANIMALS}, {p:'3 colours', l:L_COLOURS}, {p:'3 chocolate bars', l:L_CHOC},
+  {p:'3 car brands', l:L_CARS}, {p:'3 sports', l:L_SPORTS}, {p:'3 Premier League clubs (ever)', l:L_CLUBS},
+  {p:'3 vegetables', l:L_VEG}
+];
+const FINISH_PROMPTS = [
+  'The worst thing to hear your pilot say is…','My secret talent is…','Nobody warns you that being an adult is mostly…',
+  'The real reason the dinosaurs died out was…','I would never date someone who…','The worst possible name for a pub is…',
+  'My autobiography would be called…','The government is secretly hiding…','You know it\'s a bad party when…',
+  'The worst thing to find in your coat pocket is…','The first thing I\'d buy with a million quid is…','Never trust anyone who…',
+  'The new Olympic sport should be…','If my dog could talk, the first thing it would say is…','The worst superpower to have would be…',
+  'A rejected crisp flavour:','The real reason I was late today:','The worst thing to shout at a funeral is…'
+];
+// Guess the Song: emoji clues for the TITLE plus spoken hints, never lyrics
+const SONGS = [
+  {e:'☂️', t:['umbrella'], a:['rihanna'], y:'2007 · Pop/R&B', i:'R', w:1},
+  {e:'🎆', t:['firework'], a:['katy perry'], y:'2010 · Pop', i:'K. P.', w:1},
+  {e:'🔷 + 🫵', t:['shape of you'], a:['ed sheeran','sheeran'], y:'2017 · Pop', i:'E. S.', w:3},
+  {e:'📞🔥💎', t:['hotline bling'], a:['drake'], y:'2015 · Hip hop', i:'D', w:2},
+  {e:'🥇⛏️', t:['gold digger'], a:['kanye west','kanye','ye'], y:'2005 · Hip hop', i:'K. W.', w:2},
+  {e:'🏙️🗽 + 🧠', t:['empire state of mind'], a:['jay z','jayz','jay-z','jay z and alicia keys','alicia keys'], y:'2009 · Hip hop', i:'J-Z', w:4},
+  {e:'🙈💡', t:['blinding lights'], a:['the weeknd','weeknd'], y:'2019 · Synth-pop', i:'T. W.', w:2},
+  {e:'🎳 + 🌊', t:['rolling in the deep'], a:['adele'], y:'2010 · Soul/pop', i:'A', w:4},
+  {e:'🟨', t:['yellow'], a:['coldplay'], y:'2000 · Rock', i:'C', w:1},
+  {e:'🧟🎬😱', t:['thriller'], a:['michael jackson','mj'], y:'1982 · Pop', i:'M. J.', w:1},
+  {e:'😈👨', t:['bad guy'], a:['billie eilish','billie'], y:'2019 · Pop', i:'B. E.', w:2},
+  {e:'👋😃❗', t:['hey ya','hey ya!'], a:['outkast'], y:'2003 · Hip hop/funk', i:'O', w:2},
+  {e:'🤔🧱', t:['wonderwall'], a:['oasis'], y:'1995 · Britpop', i:'O', w:1},
+  {e:'1️⃣👩👩👩', t:['single ladies','single ladies put a ring on it'], a:['beyonce'], y:'2008 · R&B', i:'B', w:2},
+  {e:'🫨📴', t:['shake it off'], a:['taylor swift','taylor'], y:'2014 · Pop', i:'T. S.', w:3},
+  {e:'⬆️🏙️🕺', t:['uptown funk'], a:['mark ronson','bruno mars','mark ronson and bruno mars'], y:'2014 · Funk-pop', i:'M. R. ft. B. M.', w:2},
+  {e:'🍬 + 👩 (Caroline)', t:['sweet caroline'], a:['neil diamond'], y:'1969 · Pop', i:'N. D.', w:2},
+  {e:'🤪❤️', t:['crazy in love'], a:['beyonce'], y:'2003 · R&B', i:'B', w:3},
+  {e:'🎩☀️ + ⬅️', t:['mr brightside','mister brightside'], a:['the killers','killers'], y:'2003 · Indie rock', i:'T. K.', w:2},
+  {e:'💪💪💪', t:['stronger'], a:['kanye west','kanye','ye'], y:'2007 · Hip hop', i:'K. W.', w:1},
+  {e:'🚫🛑🙅 + 🫵', t:['dont stop me now','don\'t stop me now'], a:['queen'], y:'1979 · Rock', i:'Q', w:4},
+  {e:'🔥🏠⬇️', t:['bring the house down','burn the house down'], a:['ajr'], y:'2018 · Pop', i:'AJR', w:4, skip:true},
+  {e:'🌧️☔ + 💜', t:['purple rain'], a:['prince'], y:'1984 · Rock/funk', i:'P', w:2},
+  {e:'🏃🔫 hmm', skip:true},
+  {e:'👀🐯', t:['eye of the tiger'], a:['survivor'], y:'1982 · Rock', i:'S', w:4},
+  {e:'🌍🧑‍🤝‍🧑 ❌ 🚧', skip:true},
+  {e:'🍑🥀', skip:true},
+  {e:'🧊🧊👶', t:['ice ice baby'], a:['vanilla ice'], y:'1990 · Hip hop', i:'V. I.', w:3},
+  {e:'💃👑', t:['dancing queen'], a:['abba'], y:'1976 · Pop', i:'A', w:2}
+].filter(s=>!s.skip);
+const MEMORY_ITEMS = [
+  ['🍎','apple'],['🍌','banana'],['🚗','car'],['⚽','football|ball|soccer ball'],['🎸','guitar'],['🔑','key'],['☂️','umbrella'],
+  ['🕶️','sunglasses|glasses|shades'],['🎩','hat|top hat'],['🐶','dog|puppy'],['🐱','cat|kitten'],['🐸','frog'],['🦆','duck'],
+  ['🍕','pizza'],['🍔','burger|hamburger'],['🍩','doughnut|donut'],['🎂','cake|birthday cake'],['⏰','clock|alarm clock|alarm'],
+  ['📱','phone|mobile|smartphone'],['💡','lightbulb|light bulb|bulb'],['🚲','bike|bicycle'],['✈️','plane|aeroplane|airplane'],
+  ['🚀','rocket'],['🌵','cactus'],['🌻','sunflower|flower'],['🔥','fire|flame'],['⭐','star'],['🌙','moon'],['🎈','balloon'],
+  ['🎁','present|gift'],['📚','books|book'],['✂️','scissors'],['🔨','hammer'],['🧲','magnet'],['🪑','chair'],['🧀','cheese'],
+  ['🥕','carrot'],['🍇','grapes|grape'],['🐝','bee'],['🦋','butterfly'],['🐙','octopus'],['🦈','shark'],['🐘','elephant'],
+  ['🦒','giraffe'],['👑','crown'],['💎','diamond|gem'],['🎲','dice|die'],['🧦','socks|sock'],['👟','trainer|trainers|shoe|sneaker'],['🍦','ice cream|icecream']
+];
+// Who Am I: five clues, hardest first
+const WHO = [
+  {n:'Usain Bolt', a:['usain bolt','bolt'], c:['I was born in Jamaica in 1986.','I won gold at three different Olympic Games.','My celebration points to the sky.','I hold the 100m world record: 9.58 seconds.','My surname is another word for a flash of lightning.']},
+  {n:'Taylor Swift', a:['taylor swift','taylor','swift'], c:['I was born in Pennsylvania in 1989.','I started out as a country singer in Nashville.','One of my albums is named after the year I was born.','My Eras Tour is the highest-grossing tour ever.','My fans call themselves Swifties.']},
+  {n:'Albert Einstein', a:['albert einstein','einstein'], c:['I was born in Germany in 1879.','I once worked in a patent office in Switzerland.','I won the 1921 Nobel Prize in Physics.','I came up with the theory of relativity.','E = mc² is my most famous equation.']},
+  {n:'Queen Elizabeth II', a:['queen elizabeth','elizabeth ii','queen elizabeth ii','the queen','elizabeth','queen elizabeth 2'], c:['I was born in London in 1926.','I trained as a mechanic in the Second World War.','I was very fond of corgis.','I reigned for 70 years.','My son became King Charles III.']},
+  {n:'William Shakespeare', a:['william shakespeare','shakespeare'], c:['I was born in Stratford-upon-Avon.','I married a woman called Anne Hathaway.','My plays were staged at the Globe Theatre.','I wrote Hamlet and Macbeth.','I wrote Romeo and Juliet.']},
+  {n:'Lionel Messi', a:['lionel messi','messi','leo messi'], c:['I was born in Rosario in 1987.','I moved to Barcelona when I was 13.','I won the World Cup in 2022.','I have won a record eight Ballon d\'Or awards.','I captained Argentina and wear the number 10.']},
+  {n:'Homer Simpson', a:['homer simpson','homer'], c:['I work at a nuclear power plant.','I live in a town called Springfield.','My favourite beer is Duff.','I\'m famous for saying "D\'oh!"','My son is Bart and my wife is Marge.']},
+  {n:'Harry Potter', a:['harry potter','harry'], c:['I grew up in a cupboard under the stairs.','I play Seeker for my house team.','I have a lightning-bolt scar.','My best friends are Ron and Hermione.','I\'m known as the Boy Who Lived.']},
+  {n:'Mario', a:['mario','super mario','mario mario'], c:['I first appeared in an arcade game in 1981.','I\'m a plumber by trade.','My brother is Luigi.','I wear a red cap with an M on it.','I keep rescuing Princess Peach.']},
+  {n:'David Beckham', a:['david beckham','beckham','becks'], c:['I was born in Leytonstone in 1975.','I scored from the halfway line against Wimbledon in 1996.','I married a former Spice Girl.','I played for Man Utd, Real Madrid, LA Galaxy, Milan and PSG.','I wore the number 7 for England.']},
+  {n:'Beyoncé', a:['beyonce','queen bey'], c:['I was born in Houston, Texas, in 1981.','I first found fame in Destiny\'s Child.','I\'m married to Jay-Z.','I\'ve won more Grammys than anyone in history.','My fans are called the BeyHive.']},
+  {n:'Shrek', a:['shrek'], c:['I live alone in a swamp.','My best friend is a talking donkey.','I married Princess Fiona.','I say ogres are like onions.','I\'m a big green ogre.']},
+  {n:'Gordon Ramsay', a:['gordon ramsay','ramsay'], c:['I was born in Johnstone, Scotland, in 1966.','I played youth football for Rangers.','My restaurants have earned many Michelin stars.','I host Hell\'s Kitchen.','I\'m a famously sweary TV chef.']},
+  {n:'Michael Jackson', a:['michael jackson','mj','jackson'], c:['I was born in Gary, Indiana, in 1958.','I started out singing with my brothers.','I released the best-selling album of all time.','I made the moonwalk famous.','I\'m known as the King of Pop.']}
+];
+
+/* ---------- ONLINE: shared helpers ---------- */
+let roomNS=null, roomTried=false, live=null;
+async function getRoom(){
+  if (roomNS || roomTried) return roomNS;
+  roomTried=true;
+  try { roomNS = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch(e){ roomNS=null; }
+  return roomNS;
+}
+const OFFLINE_MSG = 'Online play only works when this page is open on claude.ai, signed in, by people it has been shared with. Solo play works anywhere.';
+const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ';
+const newCode = () => Array.from({length:4},()=>CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]).join('');
+const roomName = code => 'pyr-'+code.toLowerCase();
+const joinUrl = code => ART_URL+'#join-'+code.toLowerCase();
+const TOTAL_ROUNDS=6, HALF_AFTER=3, MG_POINTS=5;
+const now = () => Date.now();
+const rint = n => Math.floor(Math.random()*n);
+const pickR = a => a[rint(a.length)];
+function mulberry(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function seededShuffle(arr, rnd){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+const normA = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[’'`.!?,]/g,'').replace(/[–—\-]/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().replace(/^(the|a|an) /,'');
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=[...Array(n+1).keys()];for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+// does `ans` match one of `keys` (already normalised)? small typos allowed on longer words
+function fuzzyHit(ans, keys){
+  const q=normA(ans); if(!q) return false;
+  for (const k of keys){ if (k===q) return true; if (k.length>=5 && q.length>=4 && lev(q,k)<=(k.length>=9?2:1)) return true; }
+  return false;
+}
+// list entries are 'Name|alias|alias'; returns entry index or -1
+function listHit(list, ans){
+  const q=normA(ans); if(!q) return -1;
+  for (let i=0;i<list.length;i++){ if (fuzzyHit(q, list[i].split('|').map(normA))) return i; }
+  return -1;
+}
+const cleanText = (s,n=80) => String(s||'').replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁯]/g,' ').replace(/\s+/g,' ').trim().slice(0,n);
+const fmtLeft = ms => Math.max(0,Math.ceil(ms/1000));
+
+/* ----- spot the difference scenes (same seed draws the same pictures everywhere) ----- */
+const SPOT_COLS=['#9b84f0','#5f95ee','#3fb7b2','#7cc474','#ee9462','#e9709b'];
+const SPOT_SHAPES=['circle','square','tri','star','heart','diamond'];
+function spotScene(seed){
+  const rnd=mulberry(seed), cells=[];
+  const empty=new Set(seededShuffle([...Array(15).keys()],rnd).slice(0,3));
+  for(let i=0;i<15;i++) cells.push(empty.has(i)?null:{s:SPOT_SHAPES[Math.floor(rnd()*6)],c:SPOT_COLS[Math.floor(rnd()*6)],r:Math.floor(rnd()*4)*15});
+  const filled=[...Array(15).keys()].filter(i=>cells[i]);
+  const diffs=seededShuffle(filled,rnd).slice(0,3);
+  const changed=cells.map(c=>c&&{...c});
+  diffs.forEach((i,k)=>{
+    const c=changed[i];
+    if(k===0){ c.c=SPOT_COLS[(SPOT_COLS.indexOf(c.c)+1+Math.floor(rnd()*4))%6]; }
+    else if(k===1){ c.s=SPOT_SHAPES[(SPOT_SHAPES.indexOf(c.s)+1+Math.floor(rnd()*4))%6]; }
+    else changed[i]=null;
+  });
+  return {base:cells, changed, diffs};
+}
+function shapeSVG(o,x,y){
+  if(!o) return '';
+  const S='stroke="#232836" stroke-width="2" stroke-linejoin="round"';
+  const t=`transform="translate(${x} ${y}) rotate(${o.r})"`;
+  const p={circle:`<circle r="15" fill="${o.c}" ${S}/>`,square:`<rect x="-13" y="-13" width="26" height="26" rx="3" fill="${o.c}" ${S}/>`,tri:`<path d="M0 -16 L15 12 L-15 12Z" fill="${o.c}" ${S}/>`,
+    star:`<path d="M0 -17 L5 -6 L16 -5 L8 3 L10 15 L0 9 L-10 15 L-8 3 L-16 -5 L-5 -6Z" fill="${o.c}" ${S}/>`,heart:`<path d="M0 14 C-18 2 -16 -14 -6 -14 C-2 -14 0 -10 0 -8 C0 -10 2 -14 6 -14 C16 -14 18 2 0 14Z" fill="${o.c}" ${S}/>`,
+    diamond:`<path d="M0 -17 L13 0 L0 17 L-13 0Z" fill="${o.c}" ${S}/>`}[o.s];
+  return `<g ${t}>${p}</g>`;
+}
+function sceneSVG(cells, opts={}){
+  let g=`<rect x="1" y="1" width="248" height="148" rx="10" fill="#e9eaf0" stroke="#2a3040" stroke-width="2"/>`;
+  cells.forEach((o,i)=>{ const x=25+(i%5)*50, y=25+Math.floor(i/5)*50; g+=shapeSVG(o,x,y);
+    if(opts.found && opts.found.includes(i)) g+=`<circle cx="${x}" cy="${y}" r="21" fill="none" stroke="#2f8f57" stroke-width="3.5"/>`;
+    if(opts.tap) g+=`<rect data-cell="${i}" x="${x-25}" y="${y-25}" width="50" height="50" fill="transparent" style="cursor:pointer"/>`; });
+  return `<svg viewBox="0 0 250 150" class="scene" role="img" aria-label="${opts.label||'Picture'}">${g}</svg>`;
+}
+/* ----- blackjack ----- */
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], SUITS=['♠','♥','♦','♣'];
+const freshDeck = () => shuffle(RANKS.flatMap(r=>SUITS.map(s=>r+s)));
+function bjVal(h){ let v=0,a=0; for(const c of h){ const r=c.slice(0,-1); if(r==='A'){a++;v+=11} else v+= (['J','Q','K'].includes(r)?10:+r); } while(v>21&&a){v-=10;a--} return v; }
+const cardHTML = c => { const red=/[♥♦]/.test(c); return `<span class="card${red?' red':''}">${esc(c.slice(0,-1))}<i>${c.slice(-1)}</i></span>`; };
+/* ----- higher or lower: numbers from the category data ----- */
+function statNum(s){
+  const m=String(s).replace(/,/g,'').match(/(-?\d+(?:\.\d+)?)(bn|m|k)?/i); if(!m) return null;
+  let v=parseFloat(m[1]); const u=(m[2]||'').toLowerCase();
+  if(u==='bn')v*=1e9; else if(u==='m')v*=1e6; else if(u==='k')v*=1e3;
+  return v;
+}
+const HL_CATS=['area','pop','mtn','river','states','africa','islands','lakes','eu','samerica','small','moons','pl','plapps','nba','solar'];
+function hlChain(rnd, not){
+  const ids=HL_CATS.filter(x=>x!==not); const c=byId(ids[Math.floor(rnd()*ids.length)]);
+  let order=seededShuffle([...Array(10).keys()],rnd);
+  const out=[order[0]];
+  for(const i of order.slice(1)){ if(statNum(c.items[i][1])!==statNum(c.items[out[out.length-1]][1])) out.push(i); }
+  return {c:c.id, ch:out};
+}
+const hlVal = (cid,i) => statNum(byId(cid).items[i][1]);
+const HL_Q = {area:'area',pop:'population',mtn:'height',river:'length',states:'area',africa:'area',islands:'area',lakes:'area',eu:'area',samerica:'area',small:'area',moons:'diameter',pl:'Premier League goals',plapps:'Premier League appearances',nba:'NBA points',solar:'diameter'};
+
+function leaveOnline(){
+  if (hostTimer) { clearInterval(hostTimer); hostTimer=null; }
+  if (playTick) { clearInterval(playTick); playTick=null; }
+  if (live){ try{ live.leave() }catch(e){} live=null; }
+  G=null; me=null;
+}
+
+/* =================== HOST =================== */
+let G=null, hostTimer=null, qrFor='';
+let FORCE_MG=null; // test hook
+window.__pyrForceGame = g => { FORCE_MG=g; };
+// test helpers for the host screen only: jump to half-time, read the current mini-game's answers
+window.__pyrTest = {
+  half: () => { if (G) { G.round=HALF_AFTER; goHalf(); } },
+  review: () => G && G.L.mg ? JSON.parse(JSON.stringify({rev:G.L.mg.rev||null, rv:G.L.mg.rv||null})) : null,
+  state: () => G ? JSON.parse(JSON.stringify({phase:G.phase, round:G.round, scores:G.scores, vote:G.vote, tb:G.tb, mg:G.mg})) : null,
+  cheat: () => { if(!G||!G.mg) return null; const m=G.mg;
+    if (m.g==='spot') return spotScene(m.seed).diffs;
+    if (m.g==='five') return FIVE_PROMPTS[m.q].l.slice(0,3).map(x=>x.split('|')[0]);
+    if (m.g==='song') return [SONGS[m.q].t[0], SONGS[m.q].a[0]];
+    if (m.g==='memory') return memItems(m.seed).map(i=>MEMORY_ITEMS[i][1].split('|')[0]);
+    if (m.g==='who') return WHO[m.q].a[0];
+    if (m.g==='hl' && m.ch) return hlVal(m.c,m.ch[m.s+1])>hlVal(m.c,m.ch[m.s])?'h':'l';
+    return null; }
+};
+
+function newGame(code){ return {code, phase:'lobby', round:0, cat:null, order:[], dur:60, scores:[], used:[], vote:null, tb:null, mg:null, mgId:0, dl:0, seq:0, players:[], L:{}}; }
+async function startHost(forceNew){
+  leaveOnline(); show('host');
+  $('hNotice').classList.add('hidden');
+  let saved=null; try{ saved=JSON.parse(store('pyr-host')||'null') }catch(e){}
+  G = (!forceNew && saved && now()-saved.at<6*3600e3 && saved.s && saved.s.code) ? Object.assign(newGame(saved.s.code), {scores:saved.s.scores||[], round:saved.s.round||0, used:saved.s.used||[], phase: saved.s.round? 'lobby':'lobby', resumed:!!saved.s.round}) : newGame(newCode());
+  renderHost();
+  hostTimer=setInterval(()=>{ if(G){ hostStep(); renderHostDynamic(); } },250);
+  const R = await getRoom();
+  if (!R){ $('hNotice').textContent=OFFLINE_MSG; $('hNotice').classList.remove('hidden'); return; }
+  try { live = await R.join(roomName(G.code)); }
+  catch(e){ $('hNotice').textContent='Could not open the game room ('+(e&&e.code||'error')+'). Try New game code.'; $('hNotice').classList.remove('hidden'); return; }
+  live.onPeers(ch=>{ if(!G) return;
+    const map=new Map();
+    for (const p of ch.peers){ const pr=p.presence;
+      if (p.sameTab || !pr || pr.role!=='player' || pr.code!==G.code || typeof pr.name!=='string') continue;
+      const name=cleanName(pr.name)||'Player', key=name.toLowerCase();
+      const prev=map.get(key); if (!prev || p.updatedAt>prev.at) map.set(key,{name,key,av:avOk(pr.av),p:pr,at:p.updatedAt});
+    }
+    G.players=[...map.values()];
+    hostStep(); renderHost();
+  });
+  pub();
+}
+function pub(){
+  if (!G) return;
+  G.seq++;
+  const P={role:'host',code:G.code,phase:G.phase,round:G.round,total:TOTAL_ROUNDS,cat:G.cat,order:G.order,dur:G.dur,scores:G.scores.slice(0,30),
+    tl:G.dl?Math.max(0,G.dl-now()):0, seq:G.seq,
+    vote:G.phase==='vote'?G.vote:null, tb:G.phase==='tb'?G.tb:null, mg:(G.phase==='mg')?G.mg:null};
+  store('pyr-host',JSON.stringify({at:now(),s:{code:G.code,scores:G.scores,round:G.round,used:G.used}}));
+  if (live) live.presence(P).catch(()=>{});
+  renderHost();
+}
+const findP = name => G.players.find(p=>p.key===String(name).toLowerCase());
+function scoreRow(name){
+  const key=name.toLowerCase(); let row=G.scores.find(s=>s[0].toLowerCase()===key);
+  if(!row){ const p=findP(name); row=[name,0,0,p?p.av:AVATARS[0].id]; G.scores.push(row); }
+  return row;
+}
+const mgOf = p => (p.p.mg && p.p.mg.id===G.mg.id) ? p.p.mg : null;
+
+/* ----- phase changes ----- */
+function goVote(){
+  G.round++;
+  const pool=shuffle(CATS.filter(c=>!G.used.includes(c.id))), opts=[], groups=new Set();
+  for(const c of pool){ if(opts.length<4 && !groups.has(c.group)){ opts.push(c.id); groups.add(c.group); } }
+  for(const c of pool){ if(opts.length<4 && !opts.includes(c.id)) opts.push(c.id); }
+  G.vote={o:opts}; G.phase='vote'; G.dl=now()+25000; pub();
+}
+function votesNow(){
+  const v={}; G.vote.o.forEach(c=>v[c]=[]);
+  for(const p of G.players){ const x=p.p.vote; if(x && x.r===G.round && v[x.c]) v[x.c].push(p.name); }
+  return v;
+}
+function resolveVote(){
+  const v=votesNow(), max=Math.max(...G.vote.o.map(c=>v[c].length));
+  if (max===0) return startRound(pickR(G.vote.o));
+  const tied=G.vote.o.filter(c=>v[c].length===max);
+  if (tied.length===1) return startRound(tied[0]);
+  const [a,b]=shuffle(tied).slice(0,2), pa=pickR(v[a]), pb=pickR(v[b]);
+  G.L.deck=freshDeck();
+  G.tb={c:[a,b], p:[pa,pb], av:[findP(pa)?.av||AVATARS[0].id, findP(pb)?.av||AVATARS[0].id], h:[[],[]], s:['play','play'], w:-1, m:'', hand:1};
+  dealTB();
+  G.phase='tb'; pub();
+}
+function dealTB(){
+  if (G.L.deck.length<12) G.L.deck=freshDeck();
+  G.tb.h=[[G.L.deck.pop(),G.L.deck.pop()],[G.L.deck.pop(),G.L.deck.pop()]];
+  G.tb.s=G.tb.h.map(h=>bjVal(h)===21?'stand':'play'); G.tb.w=-1;
+  G.L.seen=G.tb.p.map(n=>{ const p=findP(n); return p&&p.p.bj&&p.p.bj.r===G.round ? p.p.bj.n : 0; });
+  G.dl=now()+40000;
+}
+function startRound(cid){
+  G.cat=cid; G.used.push(cid); G.order=shuffle([...Array(10).keys()]);
+  G.phase='play'; G.dl=G.dur?now()+G.dur*1000:0; G.L.autoRev=0; pub();
+}
+function hostReveal(){
+  if (!G || G.phase!=='play') return;
+  const c=byId(G.cat), seen=new Set();
+  for (const p of G.players){
+    if (seen.has(p.key)) continue; seen.add(p.key);
+    const pr=p.p;
+    const placed=(pr.round===G.round && Array.isArray(pr.ans) && pr.ans.length===10) ? pr.ans.map(x=>Number.isInteger(x)&&x>=0&&x<10?x:-1) : Array(10).fill(-1);
+    const n=scoreOf(c,placed), row=scoreRow(p.name);
+    row[1]+=n; row[2]=n; row[3]=p.av;
+  }
+  for (const row of G.scores) if(!seen.has(row[0].toLowerCase())) row[2]=0;
+  G.phase='reveal'; G.dl=0; pub();
+}
+function goHalf(){ G.phase='half'; G.mg=null; G.dl=now()+12000; pub(); }
+function spinWheel(){
+  if (!G || G.phase!=='half') return;
+  const g = FORCE_MG && MG_LIST.some(m=>m.id===FORCE_MG) ? FORCE_MG : pickR(MG_LIST).id;
+  G.mgId++; G.mg={id:G.mgId, g, st:'spin', turns:5+rint(3)}; G.phase='mg'; G.L.mgAt=now()+5600; G.dl=0; pub();
+}
+function goFinal(){ G.phase='final'; G.dl=0; pub(); }
+function hostNext(){
+  if (!G) return;
+  if (G.phase==='lobby') { G.scores=[]; G.round=0; G.used=[]; return goVote(); }
+  if (G.phase==='reveal') return G.round===HALF_AFTER ? goHalf() : G.round>=TOTAL_ROUNDS ? goFinal() : goVote();
+  if (G.phase==='mg' && G.mg && G.mg.st==='done') return goVote();
+}
+function mgWin(name){
+  if (!G.mg || G.mg.win || G.mg.st==='done') return;
+  G.mg.win=name; G.mg.wav=findP(name)?.av||scoreRow(name)[3];
+  scoreRow(name)[1]+=MG_POINTS;
+  G.mg.st='done'; G.dl=0; pub();
+}
+function mgNoWinner(){ G.mg.win=''; G.mg.st='done'; G.dl=0; pub(); }
+// a wrong guess that might still be right (typo, nickname, partial name): the host decides
+function nearMiss(g, keys){
+  const q=normA(g); if (q.length<3) return false;
+  return keys.some(k=>{ if (lev(q,k)<=Math.max(3,Math.floor(k.length*.4))) return true;
+    if (k.includes(q) || q.includes(k)) return true;
+    const kw=k.split(' ').filter(w=>w.length>3); return kw.some(w=>q.split(' ').includes(w)); });
+}
+function finishRace(name, t){
+  const L=G.L.mg, seen=new Set();
+  const cand=L.log.filter(e=>e.near && e.t<t && e.name!==name).filter(e=>{ const k=e.name.toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,8);
+  if (!cand.length) return name ? mgWin(name) : mgNoWinner();
+  L.rv={win:name, cand}; G.mg.st='review'; G.dl=0; pub();
+}
+// host taps in the review panel
+function reviewToggle(pi, ii){ const r=G.L.mg&&G.L.mg.rev; if(!r||!r[pi]||!r[pi].items[ii]) return; r[pi].items[ii].ok=!r[pi].items[ii].ok; renderHost(); }
+function reviewConfirm(){
+  const m=G.mg, L=G.L.mg; if (!m || m.st!=='review') return;
+  if (L.rv){ return L.rv.win ? mgWin(L.rv.win) : mgNoWinner(); }
+  const res=L.rev.map(r=>({name:r.name,t:r.t,n:r.items.filter(i=>i.ok).length,items:r.items})).sort((a,b)=>b.n-a.n||a.t-b.t);
+  m.res=res.slice(0,12).map(r=>[r.name,r.n]);
+  if (m.g==='five' && res[0]) m.wa=res[0].items.slice(0,3).map(i=>[i.txt,i.ok]);
+  return res[0]&&res[0].n>0 ? mgWin(res[0].name) : mgNoWinner();
+}
+function reviewAccept(i){ const L=G.L.mg; if(!L||!L.rv||!L.rv.cand[i]) return; mgWin(L.rv.cand[i].name); }
+$('hX').addEventListener('click',e=>{
+  if (!G || !G.mg || G.mg.st!=='review') return;
+  const tg=e.target.closest('[data-rv]'); if (tg){ const [a,b]=tg.dataset.rv.split(':').map(Number); return reviewToggle(a,b); }
+  const ac=e.target.closest('[data-rva]'); if (ac) return reviewAccept(+ac.dataset.rva);
+  if (e.target.closest('[data-rvok]')) return reviewConfirm();
+});
+
+/* ----- mini-game set-up ----- */
+function mgStart(){
+  const m=G.mg, t=now(); G.L.mg={};
+  if (m.g==='spot'){ m.seed=1+rint(1e9); G.L.mg.diffs=spotScene(m.seed).diffs; G.L.mg.prog={}; m.st='play'; G.dl=t+90000; }
+  if (m.g==='five'){ m.q=rint(FIVE_PROMPTS.length); m.st='ready'; G.dl=t+3500; G.L.mg.ans={}; }
+  if (m.g==='finish'){ m.q=rint(FINISH_PROMPTS.length); m.st='write'; G.dl=t+60000; }
+  if (m.g==='song'){ m.q=rint(SONGS.length); m.st='play'; m.k=0; G.L.mg.t0=t; G.L.mg.seen={}; G.L.mg.log=[]; G.dl=t+60000; }
+  if (m.g==='memory'){ m.seed=1+rint(1e9); m.st='show'; G.dl=t+10000; G.L.mg.sub={}; }
+  if (m.g==='who'){ m.q=rint(WHO.length); m.st='play'; m.k=1; G.L.mg.t0=t; G.L.mg.seen={}; G.L.mg.log=[]; G.dl=t+5*8000+15000; }
+  if (m.g==='hl'){ const rnd=Math.random; const c=hlChain(rnd); m.c=c.c; m.ch=c.ch; m.s=0; m.n=0; m.alive=G.players.map(p=>p.name).slice(0,20); m.st='ask'; m.out=[]; G.L.mg.ans={}; G.dl=t+10000;
+    if(!m.alive.length) { mgNoWinner(); return; } }
+  pub();
+}
+const memItems = seed => seededShuffle([...Array(MEMORY_ITEMS.length).keys()], mulberry(seed)).slice(0,15);
+
+/* ----- the host's tick: timers, votes, actions ----- */
+function hostStep(){
+  if (!G) return;
+  const t=now(), P=G.players;
+  if (G.phase==='vote'){
+    const v=votesNow(), n=G.vote.o.reduce((a,c)=>a+v[c].length,0);
+    if ((P.length && n>=P.length) || t>G.dl) resolveVote();
+  }
+  else if (G.phase==='tb'){
+    const tb=G.tb; let ch=false;
+    if (tb.w===-1){
+      tb.p.forEach((name,i)=>{
+        if (tb.s[i]!=='play') return;
+        const p=findP(name), a=p&&p.p.bj;
+        if (a && a.r===G.round && a.n>G.L.seen[i]){ G.L.seen[i]=a.n;
+          if (a.a==='hit'){ tb.h[i].push(G.L.deck.pop()); const v=bjVal(tb.h[i]); if(v>21) tb.s[i]='bust'; else if(v===21) tb.s[i]='stand'; }
+          else tb.s[i]='stand';
+          ch=true; }
+      });
+      if (t>G.dl){ tb.s=tb.s.map(s=>s==='play'?'stand':s); ch=true; }
+      if (tb.s.every(s=>s!=='play')){
+        const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h));
+        if (v[0]===v[1]){ tb.w=-2; tb.m= v[0]<0 ? 'Both bust! Dealing again…' : `Push on ${v[0]}! Dealing again…`; G.L.redeal=t+3000; }
+        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the category`; G.dl=t+20000; }
+        ch=true;
+      }
+    } else if (tb.w===-2){
+      if (t>G.L.redeal){ tb.hand++; tb.m=''; dealTB(); ch=true; }
+    } else {
+      const p=findP(tb.p[tb.w]), k=p&&p.p.pick;
+      if (k && k.r===G.round && tb.c.includes(k.c)) return startRound(k.c);
+      if (t>G.dl) return startRound(tb.c[tb.w]);
+    }
+    if (ch) pub();
+  }
+  else if (G.phase==='play'){
+    if (G.dur && t>G.dl) return hostReveal();
+    const done=P.filter(p=>p.p.round===G.round && p.p.done).length;
+    if (P.length && done===P.length){ if(!G.L.autoRev) G.L.autoRev=t+1500; else if (t>G.L.autoRev) hostReveal(); } else G.L.autoRev=0;
+  }
+  else if (G.phase==='half'){ if (t>G.dl) spinWheel(); }
+  else if (G.phase==='mg') mgStep(t, P);
+}
+function mgStep(t, P){
+  const m=G.mg, L=G.L.mg||{};
+  if (m.st==='spin'){ if (t>G.L.mgAt){ m.st='intro'; G.dl=t+7000; pub(); } return; }
+  if (m.st==='intro'){ if (t>G.dl) mgStart(); return; }
+  if (m.st==='done') return;
+  if (m.g==='spot'){
+    let ch=false;
+    for (const p of P){ const x=mgOf(p); if(!x || !Array.isArray(x.f)) continue;
+      const f=[...new Set(x.f.filter(Number.isInteger))], found=f.filter(i=>L.diffs.includes(i)).length, wrong=f.length-found;
+      if (wrong>8) continue;
+      const pr=L.prog[p.key]||{n:0,t:0};
+      if (found>pr.n){ L.prog[p.key]={n:found,t,name:p.name}; ch=true; }
+      if (found>=3){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); return mgWin(p.name); }
+    }
+    if (ch){ m.pr=Object.values(L.prog).map(x=>[x.name,x.n]); pub(); }
+    if (t>G.dl){ const best=Object.values(L.prog).sort((a,b)=>b.n-a.n||a.t-b.t)[0]; return best&&best.n>0 ? mgWin(best.name) : mgNoWinner(); }
+  }
+  else if (m.g==='five'){
+    if (m.st==='ready'){ if (t>G.dl){ m.st='play'; G.dl=t+5000; L.end=t+6200; pub(); } return; }
+    if (m.st==='review') return;
+    for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.a) || t>L.end) continue;
+      const a=x.a.slice(0,3).map(s=>cleanText(s,30)), prev=L.ans[p.key];
+      if (!prev || prev.a.join('|')!==a.join('|')) L.ans[p.key]={name:p.name,a,t};
+    }
+    if (m.st==='play' && t>G.dl){ m.st='grace'; }
+    if (t>L.end){
+      const list=FIVE_PROMPTS[m.q].l;
+      L.rev=Object.values(L.ans).map(r=>{ const seen=new Set(); return {name:r.name,t:r.t,items:r.a.filter(Boolean).map(txt=>{ const i=listHit(list,txt), ok=i>=0&&!seen.has(i); if(i>=0) seen.add(i); return {txt,ok}; })}; }).filter(r=>r.items.length);
+      if (!L.rev.length) return mgNoWinner();
+      m.st='review'; G.dl=0; pub();
+    }
+  }
+  else if (m.g==='finish'){
+    if (m.st==='write'){
+      const subs=P.map(p=>({p,x:mgOf(p)})).filter(o=>o.x && o.x.s && cleanText(o.x.t));
+      if ((P.length && subs.length===P.length) || t>G.dl){
+        const all=P.map(p=>({p,x:mgOf(p)})).filter(o=>o.x && cleanText(o.x.t));
+        const ent=shuffle(all).slice(0,14);
+        if (!ent.length) return mgNoWinner();
+        if (ent.length===1){ m.a=[cleanText(ent[0].x.t)]; m.vc=[0]; return mgWin(ent[0].p.name); }
+        m.a=ent.map(o=>cleanText(o.x.t)); L.own=ent.map(o=>o.p.key); L.names=ent.map(o=>o.p.name);
+        m.st='vote'; G.dl=t+30000; pub();
+      }
+    } else if (m.st==='vote'){
+      const vc=m.a.map(()=>0); let voters=0;
+      for (const p of P){ const x=mgOf(p); if(!x || !Number.isInteger(x.v) || x.v<0 || x.v>=m.a.length) continue; if (L.own[x.v]===p.key) continue; vc[x.v]++; voters++; }
+      const canVote=P.filter(p=>!(L.own.length===1 && L.own[0]===p.key)).length;
+      if ((P.length && voters>=canVote) || t>G.dl){
+        const max=Math.max(...vc); m.vc=vc;
+        if (max===0) return mgNoWinner();
+        const wi=vc.indexOf(max); m.wi=wi; return mgWin(L.names[wi]);
+      }
+    }
+  }
+  else if (m.g==='song'){
+    const k=Math.min(3,Math.floor((t-L.t0)/15000)); if (k!==m.k){ m.k=k; pub(); }
+    if (m.st==='review') return;
+    const s=SONGS[m.q], tk=s.t.map(normA), ak=s.a.map(normA);
+    for (const p of P){ const x=mgOf(p); if(!x || !x.n || x.n===L.seen[p.key]) continue; L.seen[p.key]=x.n;
+      const gt=cleanText(x.t,60), ga=cleanText(x.a,60), okT=fuzzyHit(gt,tk), okA=fuzzyHit(ga,ak);
+      L.log.push({name:p.name,txt:`${gt} by ${ga}`,t,near:(okT||nearMiss(gt,tk))&&(okA||nearMiss(ga,ak))});
+      if (okT && okA) return finishRace(p.name,t); }
+    if (t>G.dl) return finishRace(null,Infinity);
+  }
+  else if (m.g==='memory'){
+    if (m.st==='show'){ if (t>G.dl){ m.st='type'; G.dl=t+45000; pub(); } return; }
+    for (const p of P){ const x=mgOf(p); if (x && x.s && !L.sub[p.key]) L.sub[p.key]=t; }
+    const subN=P.filter(p=>L.sub[p.key]).length;
+    if (m.st==='review') return;
+    if ((P.length && subN===P.length) || t>G.dl){
+      const items=memItems(m.seed); L.rev=[];
+      for (const p of P){ const x=mgOf(p); if(!x||!Array.isArray(x.w)) continue;
+        const got=new Set();
+        const its=x.w.slice(0,40).map(w=>cleanText(w,30)).filter(Boolean).map(txt=>{ const hit=items.find(i=>fuzzyHit(txt, MEMORY_ITEMS[i][1].split('|').map(normA))); const ok=hit!==undefined && !got.has(hit); if(hit!==undefined) got.add(hit); return {txt,ok}; });
+        if (its.length) L.rev.push({name:p.name,t:L.sub[p.key]||Infinity,items:its}); }
+      if (!L.rev.length) return mgNoWinner();
+      m.st='review'; G.dl=0; pub();
+    }
+  }
+  else if (m.g==='who'){
+    const k=Math.min(5,1+Math.floor((t-L.t0)/8000)); if (k!==m.k){ m.k=k; pub(); }
+    if (m.st==='review') return;
+    const ak=WHO[m.q].a.map(normA);
+    for (const p of P){ const x=mgOf(p); if(!x || !x.n || x.n===L.seen[p.key]) continue; L.seen[p.key]=x.n;
+      const g=cleanText(x.g,60), ok=fuzzyHit(g,ak);
+      L.log.push({name:p.name,txt:g,t,near:nearMiss(g,ak)});
+      if (ok) return finishRace(p.name,t); }
+    if (t>G.dl) return finishRace(null,Infinity);
+  }
+  else if (m.g==='hl'){
+    if (m.st==='ask'){
+      for (const p of P){ const x=mgOf(p); if (x && x.s===m.n && (x.p==='h'||x.p==='l') && m.alive.includes(p.name) && !L.ans[p.key]) L.ans[p.key]={p:x.p,t}; }
+      const answered=m.alive.filter(n=>L.ans[n.toLowerCase()]).length;
+      if (answered>=m.alive.length || t>G.dl){
+        const a=hlVal(m.c,m.ch[m.s]), b=hlVal(m.c,m.ch[m.s+1]), right=b>a?'h':'l';
+        const surv=m.alive.filter(n=>{ const x=L.ans[n.toLowerCase()]; return x && x.p===right; });
+        m.right=right; m.out=m.alive.filter(n=>!surv.includes(n));
+        L.prevAlive=m.alive.slice(); L.prevAns=Object.assign({},L.ans);
+        m.alive=surv; m.st='show'; G.dl=t+3500; pub();
+      }
+    } else if (m.st==='show' && t>G.dl){
+      if (m.alive.length===1) return mgWin(m.alive[0]);
+      if (m.alive.length===0){
+        const tried=L.prevAlive.filter(n=>L.prevAns[n.toLowerCase()]).sort((x,y)=>L.prevAns[x.toLowerCase()].t-L.prevAns[y.toLowerCase()].t);
+        return (m.n>0 && L.prevAlive.length) ? mgWin(tried[0]||L.prevAlive[0]) : (tried[0] ? mgWin(tried[0]) : mgNoWinner());
+      }
+      if (m.n>=24){ return mgWin(pickR(m.alive)); }
+      m.n++; m.s++;
+      if (m.s+1>=m.ch.length){ const c=hlChain(Math.random, m.c); m.c=c.c; m.ch=c.ch; m.s=0; }
+      L.ans={}; m.st='ask'; G.dl=t+10000; pub();
+    }
+  }
+}
+
+/* ----- host rendering ----- */
+function drawQr(code){
+  const el=$('hQr'); el.innerHTML=''; el.classList.remove('hidden');
+  const url=joinUrl(code); $('hUrl').textContent=url;
+  try{
+    const q=new QRLIB.QRCode(-1,QRLIB.ECL.M); q.addData(url); q.make();
+    const n=q.getModuleCount(), sc=8, b=2, W=(n+2*b)*sc;
+    const cv=document.createElement('canvas'); cv.width=cv.height=W; const g=cv.getContext('2d');
+    g.fillStyle='#fff'; g.fillRect(0,0,W,W); g.fillStyle='#0e1016';
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) g.fillRect((c+b)*sc,(r+b)*sc,sc,sc);
+    cv.setAttribute('role','img'); cv.setAttribute('aria-label','QR code to join this game'); el.appendChild(cv);
+  }catch(e){ el.classList.add('hidden'); }
+}
+const lbSorted = () => G.scores.slice().sort((a,b)=>b[1]-a[1]);
+function wheelSVG(){
+  const n=MG_LIST.length, R=150, seg=360/n;
+  let g='';
+  MG_LIST.forEach((m,i)=>{ const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    g+=`<path d="M0 0 L${R*Math.cos(a0)} ${R*Math.sin(a0)} A${R} ${R} 0 0 1 ${R*Math.cos(a1)} ${R*Math.sin(a1)}Z" fill="${m.color}" stroke="#0e1016" stroke-width="3"/>`;
+    const am=(i+.5)*seg; g+=`<text transform="rotate(${am}) translate(0 -${R*.6}) rotate(90)" text-anchor="middle" dominant-baseline="middle" font-family="Inter Tight,Inter,sans-serif" font-weight="800" font-size="12.5" fill="#12141b">${esc(m.name.replace('The ','').replace('Spot the Difference','Spot the Diff').replace('5-Second Challenge','5 Seconds').replace('Finish the Sentence','Finish It'))}</text>`; });
+  return `<div class="wheelwrap"><svg viewBox="-160 -170 320 330" class="wheel"><g id="wheelRot">${g}<circle r="22" fill="#0e1016" stroke="#e9eaf0" stroke-width="3"/></g><path d="M-14 -168 L14 -168 L0 -140Z" fill="#e9eaf0" stroke="#0e1016" stroke-width="3"/></svg></div>`;
+}
+function renderHost(){
+  if (!G) return;
+  const code=G.code;
+  $('hCode').textContent=code; $('hCode2').textContent=code;
+  if (qrFor!==code){ drawQr(code); qrFor=code; }
+  $('hCount').textContent = G.players.length ? `(${G.players.length})` : '';
+  $('hPlayers').innerHTML=G.players.map(p=>chip(p.name,p.av)).join('');
+  $('hNoPlayers').classList.toggle('hidden',G.players.length>0);
+  const lb=lbSorted();
+  $('hLb').innerHTML=lb.map(s=>lbRow(s)).join('');
+  $('hLbPanel').classList.toggle('hidden',!lb.length);
+  $('hLbTitle').textContent = G.phase==='final' ? 'Final standings' : 'Leaderboard';
+  $('hHow').classList.toggle('hidden', G.phase!=='lobby');
+  const ph=G.phase, rank = ph==='play'||ph==='reveal', x = !rank && ph!=='lobby';
+  $('hLobby').classList.toggle('hidden', ph!=='lobby');
+  $('hStage').classList.toggle('hidden', !rank);
+  $('hX').classList.toggle('hidden', !x);
+  $('hDurWrap').classList.toggle('hidden', ph!=='lobby');
+  $('hStart').classList.toggle('hidden', ph!=='lobby' && ph!=='final'); $('hStart').textContent = ph==='final' ? 'Play again' : G.resumed ? 'Start a new game' : 'Start game';
+  $('hReveal').classList.toggle('hidden', ph!=='play');
+  const nextLabel = ph==='reveal' ? (G.round===HALF_AFTER ? 'Half-time' : G.round>=TOTAL_ROUNDS ? 'Final scores' : `Round ${G.round+1}`) : (ph==='mg'&&G.mg&&G.mg.st==='done') ? `Round ${G.round+1}` : '';
+  $('hNext').classList.toggle('hidden', !nextLabel); $('hNext').textContent = nextLabel ? `Next: ${nextLabel}` : '';
+  $('hSpin').classList.toggle('hidden', ph!=='half');
+  $('hEnd').classList.toggle('hidden', ph==='lobby'||ph==='final');
+  if (rank) renderRankStage(lb);
+  if (x) renderX(lb);
+  renderHostDynamic();
+}
+function renderRankStage(lb){
+  const c=byId(G.cat);
+  $('hRound').textContent=`Round ${G.round} of ${TOTAL_ROUNDS}`;
+  const p={cat:c,order:G.order,placed:Array(10).fill(-1),sel:null,locked:true,revealed:false,last:-1};
+  $('hBoard').innerHTML=boardHTML(p,{static:true,showAnswers:G.phase==='reveal'}).replace(/<div class="cat">[\s\S]*?<\/div>/,'');
+  $('hTitle').textContent=c.t; $('hNote').textContent=c.n;
+  $('hAnswers').innerHTML = G.phase==='play' ? G.order.map(i=>`<div>${esc(c.items[i][0])}</div>`).join('') : '';
+  if (G.phase==='play'){
+    const done=G.players.filter(p=>p.p.round===G.round && p.p.done);
+    $('hStatusH').textContent=`Locked in: ${done.length} of ${G.players.length}`;
+    $('hDone').innerHTML=G.players.map(p=>chip(p.name,p.av,p.p.round===G.round&&p.p.done?'done':'')).join('') || '<span class="sub">No players yet.</span>';
+    $('hDone').classList.remove('hidden'); $('hRoundLb').classList.add('hidden');
+  } else {
+    $('hStatusH').textContent='Scores after this round';
+    $('hDone').classList.add('hidden'); $('hRoundLb').classList.remove('hidden');
+    $('hRoundLb').innerHTML=lb.map(s=>lbRow(s,`<em>+${s[2]}</em>`)).join('') || '<li><span class="n">No answers this round</span></li>';
+  }
+}
+function tvHead(title, sub){ return `<div class="mini">Join with code <b>${esc(G.code)}</b><span>${G.round?`Round ${G.round} of ${TOTAL_ROUNDS}`:''}</span></div><div class="cat"><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="xTimer"></div>`; }
+function renderX(lb){
+  const el=$('hX'), ph=G.phase, m=G.mg;
+  // keep the wheel element alive while it spins
+  const key = ph==='mg' && m && m.st==='spin' ? 'spin'+m.id : '';
+  if (key && G.L.tvKey===key) return; G.L.tvKey=key;
+  let h='';
+  if (ph==='vote'){
+    const v=votesNow(), total=G.players.length;
+    h = tvHead(`Round ${G.round}: vote for the category`, `Vote on your phone. Most votes wins; a tie goes to blackjack.`)
+      + `<div class="opts">${G.vote.o.map(cid=>{ const c=byId(cid), n=v[cid].length; return `<div class="opt"><div class="opt-g">${esc(GROUPS.find(g=>g.id===c.group).name)}</div><div class="opt-t">${esc(c.t)}</div><div class="opt-bar"><span style="width:${total?Math.round(n/total*100):0}%"></span></div><div class="opt-v">${v[cid].map(nm=>avatarSVG(findP(nm)?.av||AVATARS[0].id)).join('')}<b>${n}</b></div></div>`; }).join('')}</div>`
+      + `<p class="hint">${G.players.filter(p=>p.p.vote&&p.p.vote.r===G.round).length} of ${total} voted</p>`;
+  }
+  else if (ph==='tb'){
+    const tb=G.tb;
+    h = tvHead('Tie! Blackjack decides', `${esc(byId(tb.c[0]).t)} vs ${esc(byId(tb.c[1]).t)}`)
+      + `<div class="bj">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(byId(tb.c[i]).t)}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
+      + `<p class="hint big2">${esc(tb.m||`Hand ${tb.hand}: closest to 21 without going bust wins.`)}</p>`;
+  }
+  else if (ph==='half'){
+    h = tvHead('Half-time!', 'The wheel picks a mini-game. The winner gets 5 points.') + wheelSVG()
+      + `<div class="panel" style="max-width:560px;margin:14px auto 0"><h3>Leaderboard</h3><ol class="board-lb">${lb.map(s=>lbRow(s)).join('')}</ol></div>`;
+  }
+  else if (ph==='mg') h = renderMgTV(m, lb);
+  else if (ph==='final'){
+    const top=lb.slice(0,3), order=[1,0,2].filter(i=>top[i]);
+    h = `<div class="cat"><h2>Final standings</h2><p>Thanks for playing Top Ten Pyramid.</p></div><div class="podium">${order.map(i=>`<div class="pod p${i+1}">${avatarSVG(avOk(top[i][3]))}<b>${esc(cleanName(top[i][0]))}</b><span>${top[i][1]} pts</span><div class="step">${i+1}</div></div>`).join('')}</div>`
+      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map(s=>lbRow(s)).join('')}</ol></div>`;
+  }
+  el.innerHTML=h;
+  if (key){ // start the spin on the freshly drawn wheel
+    const n=MG_LIST.length, idx=MG_LIST.findIndex(x=>x.id===m.g), seg=360/n;
+    const rot=m.turns*360 + (360 - (idx*seg + seg/2));
+    const w=$('wheelRot'); if (w){ w.style.transform='rotate(0deg)'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ w.style.transition='transform 5s cubic-bezier(.15,.7,.15,1)'; w.style.transform=`rotate(${rot}deg)`; })); }
+  }
+}
+function winnerBanner(m){
+  return m.win ? `<div class="winner">${avatarSVG(avOk(m.wav))}<div><b>${esc(m.win)}</b> wins ${esc(MG_LIST.find(x=>x.id===m.g).name)}!</div><span>+${MG_POINTS}</span></div>` : `<div class="winner none">No winner this time.</div>`;
+}
+function renderMgTV(m, lb){
+  const info=MG_LIST.find(x=>x.id===m.g);
+  if (m.st==='spin') return tvHead('Spinning…', 'Which mini-game will it be?') + wheelSVG();
+  if (m.st==='intro') return `<div class="intro" style="--c:${info.color}"><div class="lbl">Half-time mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(info.rule)}</p><div class="timer" id="xTimer"></div></div>`;
+  let h=tvHead(esc(info.name), '');
+  if (m.st==='review') return h + reviewHTML(m);
+  if (m.g==='spot'){
+    const sc=spotScene(m.seed);
+    h += `<div class="scenes">${sceneSVG(sc.base,{label:'Original'})}${sceneSVG(sc.changed,{label:'Changed',found:m.st==='done'?sc.diffs:[]})}</div>`
+      + `<div class="players">${G.players.map(p=>{ const pr=(m.pr||[]).find(x=>x[0]===p.name); return chip(`${p.name} · ${pr?pr[1]:0}/3`,p.av); }).join('')}</div>`;
+  }
+  if (m.g==='five'){
+    const q=FIVE_PROMPTS[m.q];
+    h += m.st==='ready' ? `<div class="bigq">Get ready…</div><div class="bigq">Name <span>${esc(q.p)}</span></div>` : `<div class="bigq">Name <span>${esc(q.p)}</span></div>`;
+    if (m.st==='done' && m.wa) h += `<div class="answers">${m.wa.map(([s,ok])=>`<div class="${ok?'':'bad'}">${esc(s||'—')}</div>`).join('')}</div>`;
+    if (m.st==='done' && m.res) h += `<p class="hint">${m.res.map(r=>`${esc(r[0])}: ${r[1]}/3`).join(' · ')}</p>`;
+  }
+  if (m.g==='finish'){
+    const q=FINISH_PROMPTS[m.q];
+    h += `<div class="bigq">${esc(q)}</div>`;
+    if (m.st==='write'){ const n=G.players.filter(p=>{const x=mgOf(p);return x&&x.s}).length; h+=`<p class="hint">Write your ending on your phone. ${n} of ${G.players.length} done.</p>`; }
+    else h += `<ol class="entries">${(m.a||[]).map((s,i)=>`<li class="${m.st==='done'&&m.wi===i?'win':''}"><span>${esc(s)}</span>${m.st==='done'&&m.vc?`<b>${m.vc[i]} vote${m.vc[i]===1?'':'s'}</b>`:''}</li>`).join('')}</ol>${m.st==='vote'?'<p class="hint">Vote for the funniest on your phone (not your own).</p>':''}`;
+  }
+  if (m.g==='song'){
+    const s=SONGS[m.q];
+    h += `<div class="emoji">${esc(s.e)}</div><div class="hints">${m.k>=1?`<span>${esc(s.y)}</span>`:''}${m.k>=2?`<span>Artist: ${esc(s.i)}</span>`:''}${m.k>=3?`<span>${s.w} word${s.w>1?'s':''} in the title</span>`:''}</div>`;
+    if (m.st==='done') h += `<p class="hint big2">It was <b>${esc(s.t[0].replace(/\b\w/g,c=>c.toUpperCase()))}</b> by ${esc(s.a[0].replace(/\b\w/g,c=>c.toUpperCase()))}</p>`;
+    else h += `<p class="hint">Type the song and the artist on your phone. A new hint every 15 seconds.</p>`;
+  }
+  if (m.g==='memory'){
+    const items=memItems(m.seed);
+    if (m.st==='show' || m.st==='done') h += `<div class="memgrid">${items.map(i=>`<div>${MEMORY_ITEMS[i][0]}</div>`).join('')}</div>`;
+    if (m.st==='type') h += `<div class="bigq">Gone! Type everything you remember.</div><p class="hint">${G.players.filter(p=>{const x=mgOf(p);return x&&x.s}).length} of ${G.players.length} finished</p>`;
+    if (m.st==='done' && m.res) h += `<p class="hint">${m.res.map(r=>`${esc(r[0])}: ${r[1]}`).join(' · ')}</p>`;
+  }
+  if (m.g==='who'){
+    const w=WHO[m.q];
+    h += `<div class="who"><div class="mystery">${m.st==='done'?`<b>${esc(w.n)}</b>`:'?'}</div><ol class="clues">${w.c.map((c,i)=>`<li class="${i<m.k||m.st==='done'?'on':''}">${i<m.k||m.st==='done'?esc(c):'Clue '+(i+1)}</li>`).join('')}</ol></div>`;
+  }
+  if (m.g==='hl'){
+    const c=byId(m.c), a=c.items[m.ch[m.s]], b=c.items[m.ch[m.s+1]], q=HL_Q[m.c]||'number';
+    h += `<p class="hint">${esc(c.t)} · compare the ${esc(q)}</p><div class="hl"><div class="hlc"><b>${esc(a[0])}</b><span>${esc(a[1])}</span></div><div class="vs">${m.st==='show'?(m.right==='h'?'HIGHER':'LOWER'):'?'}</div><div class="hlc"><b>${esc(b[0])}</b><span>${m.st==='ask'?'Higher or lower?':esc(b[1])}</span></div></div>`
+      + `<div class="players">${(m.alive||[]).map(n=>chip(n,findP(n)?.av||AVATARS[0].id,'done')).join('')}${(m.out||[]).map(n=>chip(n,findP(n)?.av||AVATARS[0].id,'outp')).join('')}</div><p class="hint">Streak: ${m.n}</p>`;
+  }
+  if (m.st==='done') h += winnerBanner(m);
+  return h;
+}
+function reviewHTML(m){
+  const L=G.L.mg||{};
+  if (L.rv){
+    const w=L.rv.win;
+    return `<div class="review"><h3>Host check: close calls</h3><p class="sub">${w?`<b>${esc(w)}</b> got it first by the book.`:'Nobody got it by the book.'} These earlier guesses were close. Accept one if it's right; the earliest player you accept wins.</p>
+      <p class="hint big2">Answer: <b>${esc(m.g==='song'?`${SONGS[m.q].t[0]} by ${SONGS[m.q].a[0]}`:WHO[m.q].n)}</b></p>
+      <ul class="rvlist">${L.rv.cand.map((c,i)=>`<li><span class="n">${avatarSVG(findP(c.name)?.av||AVATARS[0].id)}<b>${esc(c.name)}</b></span><q>${esc(c.txt)}</q><button class="ghost" type="button" data-rva="${i}">Accept</button></li>`).join('')}</ul>
+      <div class="bar"><button class="go" type="button" data-rvok="1">${w?`Keep ${esc(w)} as winner`:'No winner'}</button></div></div>`;
+  }
+  const rev=L.rev||[];
+  const what = m.g==='five' ? `Name ${esc(FIVE_PROMPTS[m.q].p)}` : 'Objects remembered';
+  return `<div class="review"><h3>Host check: ${what}</h3><p class="sub">Ticks were marked automatically. Tap any answer to flip it between right and wrong, then confirm.</p>
+    <ul class="rvlist">${rev.map((r,pi)=>`<li><span class="n">${avatarSVG(findP(r.name)?.av||AVATARS[0].id)}<b>${esc(r.name)}</b></span><span class="rvans">${r.items.map((it,ii)=>`<button type="button" class="rvchip${it.ok?' ok':''}" data-rv="${pi}:${ii}" aria-pressed="${it.ok}">${it.ok?'✓':'✗'} ${esc(it.txt)}</button>`).join('')}</span><b class="rvn">${r.items.filter(i=>i.ok).length}</b></li>`).join('')}</ul>
+    <div class="bar"><button class="go" type="button" data-rvok="1">Confirm results</button></div></div>`;
+}
+function renderHostDynamic(){
+  if (!G) return;
+  const left = G.dl ? G.dl-now() : 0;
+  const ht=$('hTimer'); if (G.phase==='play' && G.dur){ ht.classList.remove('hidden'); ht.textContent=fmtLeft(left)?`${fmtLeft(left)}s`:"Time's up!"; ht.classList.toggle('low',fmtLeft(left)<=10); } else ht.classList.add('hidden');
+  const xt=$('xTimer'); if (xt){ const show = G.dl && !(G.phase==='mg' && G.mg && (G.mg.st==='done')); xt.classList.toggle('hidden',!show); if(show){ xt.textContent=`${fmtLeft(left)}s`; xt.classList.toggle('low',fmtLeft(left)<=5); } }
+  if (G.phase==='play') { const n=G.players.filter(p=>p.p.round===G.round && p.p.done).length; $('hStatusH').textContent=`Locked in: ${n} of ${G.players.length}`; }
+}
+$('hStart').addEventListener('click',()=>{ if(!G) return; G.dur=+$('hDur').value; G.resumed=false; G.phase='lobby'; hostNext(); });
+$('hNext').addEventListener('click',hostNext);
+$('hReveal').addEventListener('click',hostReveal);
+$('hSpin').addEventListener('click',spinWheel);
+$('hEnd').addEventListener('click',()=>{ if(G) goFinal(); });
+$('hNew').addEventListener('click',()=>{ store('pyr-host',''); qrFor=''; startHost(true); });
+$('hTv').addEventListener('click',()=>{
+  const on=document.body.classList.toggle('tv');
+  $('hTv').textContent = on ? 'Exit TV mode' : 'TV mode';
+  try{ if(on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); else if(!on && document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){}
+});
+
+/* =================== PLAYER =================== */
+let me=null, playTick=null;
+function openJoin(code){
+  leaveOnline(); show('join');
+  $('jForm').classList.remove('hidden'); $('jPlay').classList.add('hidden'); $('jNotice').classList.add('hidden'); $('jErr').textContent='';
+  $('jCode').value=(code||'').toUpperCase(); $('jName').value=store('pyr-name')||'';
+  drawAvPicker();
+  ($('jCode').value ? $('jName') : $('jCode')).focus({preventScroll:true});
+}
+$('jForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const code=$('jCode').value.toUpperCase().replace(/[^A-Z]/g,''), name=cleanName($('jName').value);
+  if (code.length!==4){ $('jErr').textContent='Codes are 4 letters, shown on the host screen.'; return; }
+  if (!name){ $('jErr').textContent='Pop your nickname in so the TV can show it.'; return; }
+  store('pyr-name',name); $('jErr').textContent='Connecting…';
+  const R=await getRoom();
+  if (!R){ $('jErr').textContent=''; $('jNotice').textContent=OFFLINE_MSG; $('jNotice').classList.remove('hidden'); return; }
+  try { live=await R.join(roomName(code)); } catch(err){ $('jErr').textContent='Could not join that game. Check the code and try again.'; return; }
+  me={code,name,host:null,play:null,round:0,seenHost:false,seq:-1,dlLocal:0,key:'',bjN:0,mgP:null,vote:null,pick:null,lock:0};
+  $('jErr').textContent=''; $('jForm').classList.add('hidden'); $('jPlay').classList.remove('hidden');
+  $('jWho').textContent=name; $('jCodeShow').textContent=code; $('jMeAv').innerHTML=avatarSVG(myAv);
+  pushMe({});
+  live.onPeers(ch=>{ if (!me) return;
+    const h=ch.peers.find(p=>!p.sameTab && p.presence && p.presence.role==='host' && p.presence.code===me.code);
+    if (h) onHost(h.presence); });
+  playTick=setInterval(playerTimers,300);
+  setTimeout(()=>{ if(me && !me.seenHost){ $('jWaitBig').textContent='Waiting for the host…'; $('jWaitMsg').textContent=`No game with code ${code} is open right now. Check the code on the TV.`; } },6000);
+  showWait();
+});
+function pushMe(extra){
+  if (!me || !live) return;
+  const p=me.play;
+  live.presence(Object.assign({role:'player',code:me.code,name:me.name,av:myAv,round:p?me.round:0,ans:p?p.placed.slice():[],done:!!(p&&p.locked)}, extra)).catch(()=>{});
+}
+const sendMg = () => pushMe({mg:me.mgP});
+function onHost(h){
+  me.seenHost=true;
+  if (h.seq!==me.seq){ me.seq=h.seq; me.dlLocal = h.tl ? now()+h.tl : 0; }
+  me.host=h;
+  const mine=(h.scores||[]).find(s=>typeof s[0]==='string'&&s[0].toLowerCase()===me.name.toLowerCase());
+  $('jTotal').textContent=`${mine?+mine[1]||0:0} pts`;
+  const ph=h.phase;
+  if (ph==='play' || (ph==='reveal' && me.play && me.round===h.round)) return onRank(h);
+  const key = playerKey(h);
+  if (ph==='lobby' || ph==='final' || !key) { me.key=''; return showWait(); }
+  if (key!==me.key){ me.key=key; buildX(h); }
+  updateX(h);
+}
+function playerKey(h){
+  const m=h.mg, tb=h.tb;
+  if (h.phase==='vote') return 'vote'+h.round;
+  if (h.phase==='tb' && tb) return 'tb'+h.round;
+  if (h.phase==='half') return 'half'+h.round;
+  if (h.phase==='reveal') return 'rv'+h.round;
+  if (h.phase==='mg' && m) return 'mg'+m.id+m.st;
+  return '';
+}
+function onRank(h){
+  const c=byId(h.cat);
+  $('jWait').classList.add('hidden'); $('jX').classList.add('hidden'); $('jRound').classList.remove('hidden');
+  if (h.phase==='play' && c && Array.isArray(h.order) && h.order.length===10){
+    if (!me.play || me.round!==h.round){ me.round=h.round; me.play=newPlay(c,h.order.slice()); $('jResult').classList.add('hidden'); pushMe({}); }
+  } else if (h.phase==='reveal' && me.play && !me.play.revealed){
+    me.play.revealed=true; me.play.sel=null; me.play.last=-1;
+    const n=scoreOf(me.play.cat,me.play.placed), lb=(h.scores||[]).slice().sort((a,b)=>b[1]-a[1]), pos=lb.findIndex(s=>s[0].toLowerCase()===me.name.toLowerCase());
+    $('jScore').textContent=`+${n} point${n===1?'':'s'}`;
+    $('jMsg').textContent=`${n} of 10 in the right spot.`+(pos>=0?` You're ${ordinal(pos+1)} of ${lb.length}.`:'');
+    $('jResult').classList.remove('hidden');
+  }
+  me.key='rank'; renderPlayer();
+}
+const ordinal = n => n+(['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');
+function showWait(){
+  if (!me) return;
+  $('jWait').classList.remove('hidden'); $('jRound').classList.add('hidden'); $('jX').classList.add('hidden');
+  const h=me.host;
+  if (h && h.phase==='final'){ $('jWaitBig').textContent='Game over!'; $('jWaitMsg').textContent='Final standings:'; }
+  else if (h){ $('jWaitBig').textContent="You're in!"; $('jWaitMsg').textContent='Watch the TV. The game starts when the host is ready.'; }
+  const lb=((h&&h.scores)||[]).slice().sort((a,b)=>b[1]-a[1]);
+  $('jLb').innerHTML=lb.map(s=>lbRow(s,'',s[0].toLowerCase()===me.name.toLowerCase()?'me':'')).join('');
+}
+function renderPlayer(){
+  const p=me.play; if(!p) return;
+  $('jBoard').innerHTML=boardHTML(p);
+  $('jLock').disabled = p.revealed || (!p.locked && p.placed.includes(-1));
+  $('jLock').textContent = p.locked ? 'Change my answer' : 'Lock in';
+  $('jClear').disabled = p.locked || p.revealed;
+}
+function playerTimers(){
+  if (!me || !me.host) return;
+  const left=me.dlLocal?me.dlLocal-now():0, h=me.host;
+  const t=$('jTimer');
+  if (h.phase==='play' && h.dur && me.play && !me.play.revealed){ t.classList.remove('hidden'); t.textContent=fmtLeft(left)?`${fmtLeft(left)}s`:"Time's up!"; t.classList.toggle('low',fmtLeft(left)<=10); } else t.classList.add('hidden');
+  const x=$('pxTimer'); if (x){ if (me.dlLocal && left>-500){ x.classList.remove('hidden'); x.textContent=`${fmtLeft(left)}s`; x.classList.toggle('low',fmtLeft(left)<=5); } else x.classList.add('hidden'); }
+}
+$('jBoard').addEventListener('click',e=>{ if(!me||!me.play) return; boardClick(me.play,e,()=>{ renderPlayer(); pushMe({}); }); });
+$('jClear').addEventListener('click',()=>{ if(!me||!me.play) return; me.play.placed.fill(-1); me.play.sel=null; renderPlayer(); pushMe({}); });
+$('jLock').addEventListener('click',()=>{ if(!me||!me.play||me.play.revealed) return; me.play.locked=!me.play.locked; me.play.sel=null; me.play.last=-1; renderPlayer(); pushMe({}); });
+
+/* ----- phone screens for votes, blackjack and mini-games ----- */
+function buildX(h){
+  $('jWait').classList.add('hidden'); $('jRound').classList.add('hidden'); $('jX').classList.remove('hidden');
+  const m=h.mg; let s=''; me.msg='';
+  const head=(t,sub)=>`<div class="cat"><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="pxTimer"></div>`;
+  if (h.phase==='vote') s=head(`Round ${h.round}: pick a category`,'Most votes wins. You can change your vote until time runs out.')+'<div id="pxDyn"></div>';
+  else if (h.phase==='tb') s=head('Blackjack tiebreak','')+'<div id="pxDyn"></div>';
+  else if (h.phase==='half') s=`<div class="wait"><div class="big">Half-time!</div><p>Watch the TV: the wheel is picking a mini-game worth ${MG_POINTS} points.</p></div>`;
+  else if (h.phase==='reveal') s='<div id="pxDyn"></div>';
+  else if (h.phase==='mg'){
+    const info=MG_LIST.find(x=>x.id===m.g);
+    if (!me.mgP || me.mgP.id!==m.id) me.mgP={id:m.id};
+    if (m.st==='spin') s=`<div class="wait"><div class="big">Spinning…</div><p>Watch the wheel on the TV.</p></div>`;
+    else if (m.st==='intro') s=`<div class="intro" style="--c:${info.color}"><div class="lbl">Mini-game · winner gets ${MG_POINTS} points</div><h2>${esc(info.name)}</h2><p>${esc(info.rule)}</p></div>`;
+    else if (m.st==='done') s='<div id="pxDyn"></div>';
+    else if (m.st==='review') s=`<div class="wait"><div class="big">Checking answers…</div><p>The host is reviewing the close calls. Watch the TV.</p></div>`;
+    else s=head(esc(info.name),'')+mgPhoneBuild(m)+'<div id="pxDyn"></div>';
+  }
+  $('jX').innerHTML=s;
+  const f=$('jX').querySelector('input:not([disabled]),textarea'); if (f) setTimeout(()=>{ try{f.focus({preventScroll:true})}catch(e){} },50);
+  playerTimers();
+}
+function mgPhoneBuild(m){
+  if (m.g==='spot'){ const sc=spotScene(m.seed); return `<p class="hint">Top: original. Tap the 3 changes in the bottom picture.</p><div class="scenes ph">${sceneSVG(sc.base,{label:'Original'})}<div id="spotB">${sceneSVG(sc.changed,{tap:true,found:[],label:'Changed: tap the differences'})}</div></div>`; }
+  if (m.g==='five'){ const q=FIVE_PROMPTS[m.q]; return `<div class="bigq">Name <span>${esc(q.p)}</span></div><div class="fivebox">${[0,1,2].map(i=>`<input data-five="${i}" maxlength="40" autocomplete="off" autocapitalize="words" placeholder="${i+1}"${m.st==='ready'?' disabled':''}>`).join('')}</div>`; }
+  if (m.g==='finish'){
+    const q=FINISH_PROMPTS[m.q];
+    if (m.st==='write') return `<div class="bigq sm">${esc(q)}</div><textarea id="finT" maxlength="80" rows="3" placeholder="Your ending (anonymous)"></textarea><div class="bar"><button class="go" type="button" data-act="finSend">Send it</button></div>`;
+    return `<div class="bigq sm">${esc(q)}</div><p class="hint">Vote for the funniest (not your own).</p>`;
+  }
+  if (m.g==='song') return `<p class="hint">Look at the emoji clues on the TV.</p><label class="f">Song<input id="sgT" maxlength="60" autocomplete="off"></label><label class="f" style="margin-top:8px">Artist<input id="sgA" maxlength="60" autocomplete="off"></label><div class="bar"><button class="go" type="button" data-act="sgGo">Guess</button></div>`;
+  if (m.g==='memory'){
+    if (m.st==='show') return `<div class="wait"><div class="big">Look at the TV!</div><p>Memorise all 15 objects. You'll type them in a moment.</p></div>`;
+    return `<div class="row" style="justify-content:center"><input id="memI" maxlength="30" autocomplete="off" placeholder="An object you saw" style="flex:1 1 200px"><button class="go" type="button" data-act="memAdd">Add</button></div><div class="tags" id="memL"></div><div class="bar"><button class="ghost" type="button" data-act="memDone">I'm done</button></div>`;
+  }
+  if (m.g==='who') return `<p class="hint">Clues are on the TV. Guess as often as you like.</p><div class="row" style="justify-content:center"><input id="whoG" maxlength="60" autocomplete="off" placeholder="Who is it?" style="flex:1 1 200px"><button class="go" type="button" data-act="whoGo">Guess</button></div>`;
+  if (m.g==='hl') return '';
+  return '';
+}
+function updateX(h){
+  const d=$('pxDyn'); playerTimers(); if (!d) return;
+  const m=h.mg, tb=h.tb, meK=me.name.toLowerCase();
+  if (h.phase==='vote'){
+    const mineV=me.vote&&me.vote.r===h.round?me.vote.c:null;
+    d.innerHTML=`<div class="vopts">${h.vote.o.map(cid=>{const c=byId(cid);return `<button type="button" class="vopt" data-vote="${cid}" aria-pressed="${mineV===cid}"><small>${esc(GROUPS.find(g=>g.id===c.group).name)}</small>${esc(c.t)}</button>`}).join('')}</div>`;
+  }
+  else if (h.phase==='tb'){
+    const i=tb.p.findIndex(n=>n.toLowerCase()===meK);
+    const hand=(k)=>`<div class="bjp${tb.w===k?' win':''}"><div class="bjn">${avatarSVG(avOk(tb.av[k]))}<b>${esc(tb.p[k])}</b></div><div class="cards">${tb.h[k].map(cardHTML).join('')}</div><div class="bjv">${tb.s[k]==='bust'?'Bust!':bjVal(tb.h[k])}</div></div>`;
+    if (i<0){ d.innerHTML=`<p class="hint big2">${esc(tb.p[0])} vs ${esc(tb.p[1])} at blackjack. Watch the TV!</p><div class="bj ph">${hand(0)}<div class="vs">VS</div>${hand(1)}</div><p class="hint">${esc(tb.m||'')}</p>`; return; }
+    const o=1-i;
+    let act='';
+    if (tb.w===-1 && tb.s[i]==='play') act=`<div class="bar"><button class="go" type="button" data-bj="hit">Hit</button><button class="ghost" type="button" data-bj="stand">Stand</button></div>`;
+    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the category:</p><div class="vopts">${tb.c.map(cid=>`<button type="button" class="vopt" data-pick="${cid}">${esc(byId(cid).t)}</button>`).join('')}</div>`;
+    else if (tb.w>=0) act=`<p class="hint big2">${esc(tb.p[tb.w])} won and is picking the category.</p>`;
+    else if (tb.w===-2) act=`<p class="hint big2">${esc(tb.m)}</p>`;
+    else act=`<p class="hint">You stand. Waiting for ${esc(tb.p[o])}…</p>`;
+    d.innerHTML=`<p class="hint">You're playing for <b>${esc(byId(tb.c[i]).t)}</b>. Get closer to 21 than ${esc(tb.p[o])} without going bust.</p><div class="bj ph">${hand(i)}<div class="vs">VS</div>${hand(o)}</div>${act}`;
+  }
+  else if (h.phase==='reveal'){ d.innerHTML=`<div class="wait"><div class="big">Round over</div><p>Check the TV for the answers.</p></div>`; }
+  else if (h.phase==='mg' && m){
+    if (m.st==='done'){
+      const won=m.win && m.win.toLowerCase()===meK;
+      d.innerHTML=`<div class="wait"><div class="big">${won?`You win! +${MG_POINTS}`:m.win?`${esc(m.win)} wins!`:'No winner this time'}</div><p>${won?'Nice one.':'Watch the TV for round 4.'}</p></div>`;
+      return;
+    }
+    if (m.g==='spot'){ const sc=spotScene(m.seed), f=(me.mgP.f||[]).filter(i=>sc.diffs.includes(i)); $('spotB').innerHTML=sceneSVG(sc.changed,{tap:true,found:f,label:'Changed: tap the differences'}); d.innerHTML=`<p class="hint big2">${f.length} of 3 found${me.lock>now()?' · oops, not that one!':''}</p>`; }
+    else if (m.g==='five'){ if (m.st!=='ready') $('jX').querySelectorAll('[data-five]').forEach(x=>{ x.disabled = m.st==='grace'; }); d.innerHTML = m.st==='ready'?'<p class="hint big2">Get ready…</p>':m.st==='grace'?'<p class="hint big2">Time!</p>':'<p class="hint">Go go go! Press Enter to jump to the next box.</p>'; }
+    else if (m.g==='finish'){
+      if (m.st==='write') d.innerHTML = me.mgP.s ? '<p class="hint big2">Sent! Waiting for everyone else…</p>' : '';
+      else { const mine=cleanText(me.mgP.t); d.innerHTML=`<div class="vopts">${(m.a||[]).map((s,i)=>s===mine?`<div class="vopt mine">${esc(s)}<small>Yours</small></div>`:`<button type="button" class="vopt" data-fv="${i}" aria-pressed="${me.mgP.v===i}">${esc(s)}</button>`).join('')}</div>`; }
+    }
+    else if (m.g==='song'){ const s=SONGS[m.q]; d.innerHTML=`<p class="hint">${m.k>=1?esc(s.y):''}${m.k>=2?' · Artist: '+esc(s.i):''}${m.k>=3?` · ${s.w} word${s.w>1?'s':''}`:''}</p><p class="hint big2" id="sgMsg">${me.msg||''}</p>`; }
+    else if (m.g==='memory'){ if (m.st==='type'){ $('memL').innerHTML=(me.mgP.w||[]).map(w=>`<span>${esc(w)}</span>`).join(''); d.innerHTML=me.mgP.s?'<p class="hint big2">Locked in! Waiting for the others…</p>':`<p class="hint">${(me.mgP.w||[]).length} added</p>`; const inp=$('memI'); if(inp) inp.disabled=!!me.mgP.s; } }
+    else if (m.g==='who'){ d.innerHTML=`<ol class="clues ph">${WHO[m.q].c.slice(0,m.k).map(c=>`<li class="on">${esc(c)}</li>`).join('')}</ol><p class="hint big2">${me.msg||''}</p>`; }
+    else if (m.g==='hl'){
+      const c=byId(m.c), a=c.items[m.ch[m.s]], b=c.items[m.ch[m.s+1]], alive=(m.alive||[]).some(n=>n.toLowerCase()===meK), wasOut=(m.out||[]).some(n=>n.toLowerCase()===meK);
+      let body=`<p class="hint">${esc(c.t)} · ${esc(HL_Q[m.c]||'')}</p><div class="hl ph"><div class="hlc"><b>${esc(a[0])}</b><span>${esc(a[1])}</span></div><div class="hlc"><b>${esc(b[0])}</b><span>${m.st==='show'?esc(b[1]):'?'}</span></div></div>`;
+      if (m.st==='ask' && alive){ const picked=me.mgP.s===m.n?me.mgP.p:null; body+=`<div class="bar"><button type="button" class="hlbtn" data-hl="h" aria-pressed="${picked==='h'}">▲ Higher</button><button type="button" class="hlbtn" data-hl="l" aria-pressed="${picked==='l'}">▼ Lower</button></div>`; }
+      else if (m.st==='show') body+=`<p class="hint big2">${wasOut?"You're out!":alive?'Correct! Still in.':'Watching…'}</p>`;
+      else body+=`<p class="hint big2">You're out. Watch the TV.</p>`;
+      d.innerHTML=body;
+    }
+  }
+}
+$('jX').addEventListener('click',e=>{
+  if (!me || !me.host) return;
+  const h=me.host, m=h.mg, t=e.target;
+  const v=t.closest('[data-vote]'); if (v){ me.vote={r:h.round,c:v.dataset.vote}; pushMe({vote:me.vote}); updateX(h); return; }
+  const b=t.closest('[data-bj]'); if (b){ me.bjN++; pushMe({bj:{r:h.round,n:Date.now()%1e9+me.bjN,a:b.dataset.bj}}); b.disabled=true; return; }
+  const pk=t.closest('[data-pick]'); if (pk){ pushMe({pick:{r:h.round,c:pk.dataset.pick}}); $('pxDyn').innerHTML='<p class="hint big2">Picked! Get ready…</p>'; return; }
+  if (!m || !me.mgP) return;
+  const cell=t.closest('[data-cell]');
+  if (cell && m.g==='spot'){
+    if (me.lock>now()) return;
+    const i=+cell.dataset.cell, sc=spotScene(m.seed); me.mgP.f=me.mgP.f||[];
+    if (!me.mgP.f.includes(i)){ me.mgP.f.push(i); if (!sc.diffs.includes(i)) me.lock=now()+1500; sendMg(); }
+    updateX(h); return;
+  }
+  const act=t.closest('[data-act]')?.dataset.act;
+  if (act==='finSend'){ const tx=cleanText($('finT').value); if(!tx) return; me.mgP.t=tx; me.mgP.s=true; $('finT').disabled=true; t.disabled=true; sendMg(); updateX(h); return; }
+  const fv=t.closest('[data-fv]'); if (fv){ me.mgP.v=+fv.dataset.fv; sendMg(); updateX(h); return; }
+  if (act==='sgGo') return songGuess();
+  if (act==='memAdd') return memAdd();
+  if (act==='memDone'){ me.mgP.s=true; sendMg(); updateX(h); return; }
+  if (act==='whoGo') return whoGuess();
+  const hl=t.closest('[data-hl]'); if (hl && m.g==='hl' && m.st==='ask'){ me.mgP.s=m.n; me.mgP.p=hl.dataset.hl; sendMg(); updateX(h); return; }
+});
+$('jX').addEventListener('input',e=>{
+  if (!me || !me.mgP) return;
+  const f=e.target.closest('[data-five]'); if (f){ me.mgP.a=[...$('jX').querySelectorAll('[data-five]')].map(x=>cleanText(x.value,40)); sendMg(); }
+});
+$('jX').addEventListener('keydown',e=>{
+  if (e.key!=='Enter' || !me) return;
+  const f=e.target.closest('[data-five]'); if (f){ e.preventDefault(); const n=$('jX').querySelector(`[data-five="${+f.dataset.five+1}"]`); if(n) n.focus(); return; }
+  if (e.target.id==='memI'){ e.preventDefault(); memAdd(); }
+  if (e.target.id==='whoG'){ e.preventDefault(); whoGuess(); }
+  if (e.target.id==='sgT'){ e.preventDefault(); $('sgA').focus(); }
+  if (e.target.id==='sgA'){ e.preventDefault(); songGuess(); }
+});
+function songGuess(){
+  const m=me.host.mg; if(!m||m.g!=='song'||me.lock>now()) return;
+  const t=cleanText($('sgT').value,60), a=cleanText($('sgA').value,60); if(!t||!a){ me.msg='Fill in both the song and the artist.'; updateX(me.host); return; }
+  const s=SONGS[m.q], okT=fuzzyHit(t,s.t.map(normA)), okA=fuzzyHit(a,s.a.map(normA));
+  me.mgP.t=t; me.mgP.a=a; me.mgP.n=(me.mgP.n||0)+1; sendMg();
+  me.msg = okT&&okA ? 'Got it! Checking…' : okT ? 'Right song, wrong artist!' : okA ? 'Right artist, wrong song!' : 'Not quite. Try again.';
+  if (!(okT&&okA)) me.lock=now()+1200;
+  updateX(me.host);
+}
+function whoGuess(){
+  const m=me.host.mg; if(!m||m.g!=='who'||me.lock>now()) return;
+  const g=cleanText($('whoG').value,60); if(!g) return;
+  const ok=fuzzyHit(g,WHO[m.q].a.map(normA));
+  me.mgP.g=g; me.mgP.n=(me.mgP.n||0)+1; sendMg();
+  me.msg = ok ? 'Got it! Checking…' : `Not ${esc(g)}. Keep guessing!`;
+  if (!ok){ me.lock=now()+1200; $('whoG').value=''; }
+  updateX(me.host);
+}
+function memAdd(){
+  const m=me.host.mg; if(!m||m.g!=='memory'||m.st!=='type'||me.mgP.s) return;
+  const w=cleanText($('memI').value,30); if(!w) return;
+  me.mgP.w=me.mgP.w||[]; if(!me.mgP.w.some(x=>normA(x)===normA(w)) && me.mgP.w.length<40) me.mgP.w.push(w);
+  $('memI').value=''; sendMg(); updateX(me.host); $('memI').focus();
+}
+
+/* ---------- routing: QR links land on #join-abcd ---------- */
+function route(){
+  const m=/^#join-([a-z]{4})$/i.exec(location.hash||'');
+  if (m) { openJoin(m[1]); return true; }
+  return false;
+}
+window.addEventListener('hashchange',route);
+if (!route()) show('home');
+}
+</script>
+</body>
+</html>

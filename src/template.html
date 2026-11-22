@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top Ten Pyramid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: a late-night game show: quiet, confident, a little playful.
+IDEA: a pyramid of moonstones under a starry midnight sky; every answer is shown, players set each stone in its ranked place.
+PICTURE: the pyramid itself, 4-3-2-1 moon-white stones, rank 1 at the apex, with a soft moon glow behind.
+COLOUR and TYPE: Midnight palette: near-black navy, moon white, lavender accent, blue/teal/green/peach; Inter Tight + Inter, JetBrains Mono for codes.
+LAYOUT: home with three doors (solo, host, join); play screen is title, pyramid, tray, action bar; TV screen adds code, QR and leaderboard.
+*/
+:root{color-scheme:light dark;
+--bg:#161a24;--bg2:#0b0c11;--panel:#151923;--panel2:#1d2230;
+--ink:#e9eaf0;--muted:#a3a9b7;
+--sand:#e3e5ec;--sandHi:#f5f6f9;--sandLo:#8e95a6;--stoneInk:#12141b;
+--acc:#b9a6f5;--accHi:#cdbffa;--blue:#8ab4f8;--teal:#72d0cc;
+--empty:rgba(255,255,255,.045);--edge:rgba(255,255,255,.14);
+--coral:#f2a97e;--ok:#a6d9a0;--gold:#b9a6f5}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{background:var(--bg2)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.75;background-image:radial-gradient(1.2px 1.2px at 7% 12%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 18% 34%,#fff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 29% 8%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 41% 22%,#cfd3ff 50%,transparent 51%),radial-gradient(1.1px 1.1px at 55% 6%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 63% 31%,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 72% 44%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 86% 9%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 93% 27%,#cfd3ff 50%,transparent 51%),radial-gradient(1px 1px at 12% 58%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 34% 71%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 48% 52%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 67% 78%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 81% 63%,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 96% 82%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 4% 90%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 24% 95%,#cfd3ff 50%,transparent 51%),radial-gradient(1px 1px at 58% 92%,#fff 50%,transparent 51%)}
+.moon{position:absolute;top:-6px;right:0;width:clamp(70px,10vw,120px);height:auto;filter:drop-shadow(0 0 28px rgba(185,166,245,.35));pointer-events:none}
+.top{position:relative}
+.wrap{position:relative;z-index:1}
+.top:has(#homeBtn:not(.hidden)) .moon{right:170px;width:clamp(56px,7vw,84px)}
+@media(max-width:600px){.top:has(#homeBtn:not(.hidden)) .moon{display:none}.moon{width:56px}}
+body{margin:0;background:radial-gradient(40% 35% at 78% 14%,rgba(120,110,190,.18),transparent 70%),radial-gradient(130% 80% at 50% 0%,var(--bg) 0%,var(--bg2) 100%) fixed;color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip;min-height:100vh}
+.wrap{max-width:1040px;margin:0 auto;padding:clamp(18px,3.5vw,40px) max(4vw,14px) 48px}
+h1,h2,h3{font-family:"Inter Tight",Inter,sans-serif;font-weight:800;letter-spacing:-.02em;margin:0;text-wrap:balance;line-height:1.08}
+h1{font-size:clamp(30px,5vw,46px)}
+h2{font-size:clamp(22px,3.4vw,32px);color:var(--sandHi)}
+h3{font-size:20px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.sub{color:var(--muted);margin:6px 0 0}
+button,select,input{font:inherit;font-size:16px}
+button{min-height:46px;padding:0 18px;border-radius:12px;border:0;cursor:pointer;font-weight:700;color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.go{background:var(--acc);color:#15121f}.go:hover:not(:disabled){background:var(--accHi)}
+.ghost{background:transparent;border:1px solid var(--edge)}.ghost:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.link{background:none;min-height:40px;padding:0 6px;color:var(--muted);text-decoration:underline}
+select,input{min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--edge);background:var(--panel);color:var(--ink);max-width:100%}
+input::placeholder{color:var(--muted)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:14px;color:var(--muted)}
+.hidden{display:none!important}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+
+/* home */
+.doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.door{background:linear-gradient(180deg,rgba(29,34,48,.85),rgba(21,25,35,.85));border:1px solid var(--edge);border-radius:18px;padding:22px;text-align:left;min-height:190px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;color:var(--ink)}
+.door:hover{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 10px 40px -12px rgba(185,166,245,.45)}
+.door .ic{width:54px;height:44px}
+.door b{font:800 22px/1.1 "Inter Tight",Inter,sans-serif;color:var(--ink)}
+.door span{color:var(--muted);font-weight:400;font-size:15px}
+.hero{display:flex;justify-content:center;margin:8px 0 0}
+@media(max-width:760px){.doors{grid-template-columns:1fr}.door{min-height:0}}
+
+/* picker */
+.groups{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.groups button{min-height:42px;padding:0 15px;border-radius:99px;background:rgba(255,255,255,.07);border:1px solid var(--edge);font-weight:600}
+.groups button[aria-pressed=true]{background:var(--acc);color:#15121f;border-color:var(--acc)}
+.pick{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.pick select{flex:1 1 260px}
+
+/* board */
+.cat{text-align:center;margin:6px 0 2px}
+.cat p{margin:4px 0 0;color:var(--muted);font-size:15px}
+.pyr{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:16px;--w:min(180px,calc((100% - 24px)/4))}
+.pyr .r{display:flex;gap:8px;justify-content:center;width:100%}
+.slot{width:var(--w);min-height:80px;border-radius:7px;padding:16px 6px 7px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:var(--empty);border:1.5px dashed var(--edge);position:relative;color:var(--ink);font-weight:700}
+button.slot:disabled,.chip:disabled{opacity:1;cursor:default}
+button.slot:hover:not(:disabled){border-color:var(--sand);background:rgba(255,255,255,.12)}
+.slot .rk{position:absolute;top:5px;left:8px;font:800 13px/1 "Inter Tight",Inter,sans-serif;opacity:.65}
+.slot .nm{font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.slot .st{font-size:12.5px;font-weight:400;opacity:.85;margin-top:2px}
+.slot .ans{font-size:12px;font-weight:600;margin-top:3px}
+.slot.full{border:0;box-shadow:0 0 22px -6px rgba(200,205,255,.35);background:linear-gradient(180deg,var(--sandHi) 0 4px,var(--sand) 4px 84%,var(--sandLo) 84%);color:var(--stoneInk);box-shadow:0 5px 0 rgba(0,0,0,.25)}
+.slot.sel,.chip.sel{outline:3px solid var(--gold);outline-offset:2px}
+.slot.right{background:linear-gradient(180deg,#d6f0d2 0 4px,var(--ok) 4px 84%,#6a9e65 84%);color:#10230f}
+.slot.wrong{background:linear-gradient(180deg,#f9d5c0 0 4px,var(--coral) 4px 84%,#bf7a52 84%);color:#2e1508}
+.slot.wrong .nm{text-decoration:line-through;text-decoration-thickness:2px}
+.slot.drop{animation:drop .35s ease-out}
+@keyframes drop{0%{transform:translateY(-14px);opacity:.3}100%{transform:none;opacity:1}}
+.ground{height:14px;width:min(780px,100%);margin:6px auto 0;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent)}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px auto 0;max-width:820px;min-height:52px;padding:10px;border-radius:14px;background:rgba(21,25,35,.7);border:1px solid rgba(255,255,255,.05)}
+.tray.empty::after{content:"All stones placed. Tap a stone to move it.";color:var(--muted);font-size:14px;align-self:center}
+.chip{min-height:46px;padding:6px 14px;border-radius:10px;background:linear-gradient(180deg,var(--sandHi) 0 3px,var(--sand) 3px);color:var(--stoneInk);font-weight:700;box-shadow:0 3px 0 var(--sandLo),0 0 18px -8px rgba(200,205,255,.5)}
+.chip:hover{filter:brightness(1.06)}
+.hint{text-align:center;color:var(--muted);font-size:14px;margin:10px 0 0;min-height:21px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px auto 0}
+.banner{margin:16px auto 0;max-width:640px;text-align:center;padding:16px;border-radius:14px;background:rgba(21,25,35,.85);border:1px solid rgba(255,255,255,.06)}
+.banner .big{font:800 clamp(28px,5vw,44px)/1 "Inter Tight",Inter,sans-serif;color:var(--gold)}
+.banner p{margin:6px 0 0;color:var(--muted)}
+
+/* online */
+.notice{max-width:640px;margin:14px auto;padding:14px 16px;border-radius:12px;background:rgba(255,107,74,.14);border:1px solid rgba(255,107,74,.4);font-size:15px}
+.lobby{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start;margin-top:8px}
+.codebox{background:rgba(21,25,35,.82);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:22px;text-align:center}
+.codebox .lbl{color:var(--muted);font-size:15px}
+.code{font:700 clamp(54px,9vw,96px)/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;color:var(--acc);margin:6px 0 10px}
+.qr{display:inline-block;padding:12px;background:#fff;border-radius:14px;line-height:0}
+.qr img,.qr canvas{width:min(220px,60vw)!important;height:auto!important}
+.url{font-size:13px;color:var(--muted);overflow-wrap:anywhere;margin-top:10px}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.pl{padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-weight:600}
+.pl.done{background:var(--ok);color:#10230f}
+.pl.done::after{content:" ✓"}
+.panel{background:rgba(21,25,35,.82);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
+.panel+.panel{margin-top:14px}
+.board-lb{list-style:none;margin:8px 0 0;padding:0;counter-reset:lb}
+.board-lb li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.06);margin-bottom:6px;counter-increment:lb}
+.board-lb li::before{content:counter(lb);font-family:"Inter Tight",Inter,sans-serif;font-weight:800;width:1.6em;color:var(--acc)}
+.board-lb li .n{flex:1}
+.board-lb li .s{font-weight:700;white-space:nowrap}
+.board-lb li .s em{font-style:normal;color:var(--ok);font-weight:600;margin-left:6px}
+.board-lb li.me{outline:2px solid var(--gold)}
+.mini{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;color:var(--muted)}
+.mini b{color:var(--acc);font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:21px;letter-spacing:.04em}
+.timer{font-variant-numeric:tabular-nums;font:800 34px/1 "Inter Tight",Inter,sans-serif;color:var(--blue);text-align:center;margin-top:8px}
+.timer.low{color:var(--coral)}
+.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:16px auto 0;max-width:900px}
+.answers div{padding:12px 14px;border-radius:10px;background:var(--sand);color:var(--stoneInk);font-weight:700;text-align:center;box-shadow:0 4px 0 var(--sandLo)}
+.answers div.bad{background:var(--coral);box-shadow:0 4px 0 #bf7a52;text-decoration:line-through}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--edge)}
+.wait{text-align:center;padding:40px 10px}
+.wait .big{font:800 clamp(26px,5vw,40px)/1.1 "Inter Tight",Inter,sans-serif;color:var(--sandHi)}
+.wait p{color:var(--muted)}
+@media(max-width:760px){.lobby{grid-template-columns:1fr}}
+@media(max-width:600px){.slot{min-height:70px;padding:15px 3px 5px}.slot .nm{font-size:13px}.slot .st{display:none}.chip{font-size:15px;padding:6px 11px}.groups button{padding:0 12px;font-size:15px}}
+
+/* avatars */
+.avgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:6px}
+.avgrid button{min-height:0;padding:6px 2px 4px;border-radius:12px;background:rgba(255,255,255,.06);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.avgrid button svg{width:100%;max-width:62px;height:auto}
+.avgrid button[aria-pressed=true]{border-color:var(--acc);background:rgba(185,166,245,.16);color:var(--ink)}
+.pl{display:inline-flex;align-items:center;gap:6px}
+.pl svg,.board-lb svg,.mini svg{width:30px;height:30px;flex:none}
+.pl{padding:4px 14px 4px 5px}
+.board-lb li{align-items:center}
+.board-lb li .n{display:flex;align-items:center;gap:8px}
+body.tv .pl svg,body.tv .board-lb svg{width:44px;height:44px}
+/*AVCSS*/
+/*GAMECSS*/
+/* TV mode: bigger everything, controls tucked away */
+body.tv .wrap{max-width:1600px}
+body.tv{font-size:19px}
+body.tv h2{font-size:clamp(30px,3.6vw,52px)}
+body.tv .pyr{--w:min(260px,calc((100% - 24px)/4))}
+body.tv .slot{min-height:104px}
+body.tv .slot .nm{font-size:clamp(16px,1.6vw,24px)}
+body.tv .slot .st{font-size:15px}
+body.tv .answers div{font-size:clamp(17px,1.5vw,24px);padding:16px}
+body.tv .top .homebtn{display:none}
+body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
+@media(prefers-reduced-motion:reduce){.slot.drop{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Top Ten Pyramid</h1>
+      <p class="sub" id="tagline">Every answer is shown. Can you put them in the right order?</p>
+    </div>
+    <svg class="moon" viewBox="0 0 100 100" aria-hidden="true"><path d="M62 8 C40 14 28 34 30 54 C32 76 52 92 74 90 C84 89 92 85 96 79 C86 84 70 84 58 74 C44 62 42 40 50 24 C53 17 57 12 62 8Z" fill="#e9eaf0"/></svg>
+    <button class="ghost homebtn hidden" type="button" id="homeBtn" style="position:relative;z-index:1">Back to menu</button>
+  </div>
+
+  <!-- HOME -->
+  <section id="vHome">
+    <div class="doors">
+      <button class="door" type="button" data-go="solo">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="19" y="2" width="16" height="10" rx="2" fill="#e9eaf0"/><rect x="10" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="28" y="16" width="16" height="10" rx="2" fill="#b9a6f5"/><rect x="1" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="19" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/><rect x="37" y="30" width="16" height="10" rx="2" fill="#8ab4f8"/></svg>
+        <b>Play solo</b><span>Pick a category, place all ten stones, score a point for each one in the right spot.</span>
+      </button>
+      <button class="door" type="button" data-go="host">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="3" y="3" width="48" height="30" rx="4" fill="none" stroke="#e9eaf0" stroke-width="3"/><rect x="20" y="36" width="14" height="4" rx="2" fill="#b9a6f5"/><rect x="21" y="10" width="12" height="7" rx="1.5" fill="#b9a6f5"/><rect x="14" y="19" width="12" height="7" rx="1.5" fill="#8ab4f8"/><rect x="28" y="19" width="12" height="7" rx="1.5" fill="#8ab4f8"/></svg>
+        <b>Host a game</b><span>Put this on the TV. Players join on their phones with a code or QR.</span>
+      </button>
+      <button class="door" type="button" data-go="join">
+        <svg class="ic" viewBox="0 0 54 44" aria-hidden="true"><rect x="16" y="2" width="22" height="40" rx="4" fill="none" stroke="#e9eaf0" stroke-width="3"/><rect x="22" y="12" width="10" height="6" rx="1.5" fill="#b9a6f5"/><rect x="21" y="21" width="12" height="6" rx="1.5" fill="#8ab4f8"/><circle cx="27" cy="36" r="2" fill="#b9a6f5"/></svg>
+        <b>Join a game</b><span>Got a code from the host's screen? Enter it here with your name.</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SOLO -->
+  <section id="vSolo" class="hidden">
+    <nav class="groups" id="sGroups" aria-label="Themes"></nav>
+    <div class="pick">
+      <select id="sCat" aria-label="Category"></select>
+      <button class="ghost" type="button" id="sRandom">Random category</button>
+    </div>
+    <div id="sBoard"></div>
+    <div class="bar">
+      <button class="go" type="button" id="sCheck" disabled>Check my pyramid</button>
+      <button class="ghost" type="button" id="sClear">Clear</button>
+    </div>
+    <div class="banner hidden" id="sResult">
+      <div class="big" id="sScore"></div>
+      <p id="sMsg"></p>
+      <div class="bar"><button class="go" type="button" id="sAgain">Play again</button><button class="ghost" type="button" id="sNext">Next category</button></div>
+    </div>
+  </section>
+
+  <!-- HOST -->
+  <section id="vHost" class="hidden">
+    <div class="notice hidden" id="hNotice"></div>
+    <div id="hLobby" class="lobby">
+      <div class="codebox">
+        <div class="lbl">Join on your phone with code</div>
+        <div class="code" id="hCode">····</div>
+        <div class="qr" id="hQr"></div>
+        <div class="url" id="hUrl"></div>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>Players <span id="hCount" style="color:var(--muted);font-family:Inter;font-size:16px"></span></h3>
+          <div class="players" id="hPlayers"></div>
+          <p class="sub" id="hNoPlayers">Waiting for players to join…</p>
+        </div>
+        <div class="panel hidden" id="hLbPanel"><h3 id="hLbTitle">Leaderboard</h3><ol class="board-lb" id="hLb"></ol></div>
+        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. Before each round everyone votes for a category; a tie goes to a blackjack showdown. Rank the pyramid for a point per correct stone. At half-time the wheel picks a mini-game worth 5 points.</p></div>
+      </div>
+    </div>
+    <div id="hStage" class="hidden">
+      <div class="mini">Join with code <b id="hCode2"></b><span id="hRound"></span></div>
+      <div class="cat"><h2 id="hTitle"></h2><p id="hNote"></p></div>
+      <div class="timer hidden" id="hTimer"></div>
+      <div id="hBoard"></div>
+      <div class="answers" id="hAnswers"></div>
+      <div class="panel" style="margin-top:16px"><h3 id="hStatusH">Players</h3><div class="players" id="hDone"></div><ol class="board-lb hidden" id="hRoundLb"></ol></div>
+    </div>
+    <div id="hX" class="hidden"></div>
+    <div class="ctrl">
+      <label class="f" id="hDurWrap" style="flex-direction:row;align-items:center;gap:8px">Ranking timer
+        <select id="hDur" aria-label="Ranking timer"><option value="0">No timer</option><option value="45">45 seconds</option><option value="60" selected>60 seconds</option><option value="90">90 seconds</option><option value="120">2 minutes</option></select>
+      </label>
+      <button class="go" type="button" id="hStart">Start game</button>
+      <button class="go hidden" type="button" id="hReveal">Reveal answers</button>
+      <button class="go hidden" type="button" id="hNext">Next</button>
+      <button class="go hidden" type="button" id="hSpin">Spin the wheel</button>
+      <button class="ghost" type="button" id="hTv">TV mode</button>
+      <button class="ghost hidden" type="button" id="hEnd">End game</button>
+      <button class="ghost" type="button" id="hNew">New game code</button>
+    </div>
+  </section>
+
+  <!-- JOIN / PLAYER -->
+  <section id="vJoin" class="hidden">
+    <div class="notice hidden" id="jNotice"></div>
+    <form id="jForm" class="panel" style="max-width:460px;margin:10px auto">
+      <h3 style="margin-bottom:12px">Join a game</h3>
+      <label class="f">Game code<input id="jCode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700"></label>
+      <div class="f" style="margin-top:12px">Pick your character<div class="avgrid" id="jAv" role="group" aria-label="Pick your character"></div></div>
+      <label class="f" style="margin-top:12px">Your nickname<input id="jName" maxlength="16" autocomplete="nickname" placeholder="e.g. Sam"></label>
+      <button class="go" type="submit" style="width:100%;margin-top:14px">Join</button>
+      <p class="hint" id="jErr"></p>
+    </form>
+    <div id="jPlay" class="hidden">
+      <div class="mini"><span id="jMeAv"></span><span id="jWho"></span><span>Code <b id="jCodeShow"></b></span><span id="jTotal"></span></div>
+      <div id="jWait" class="wait"><div class="big" id="jWaitBig">You're in!</div><p id="jWaitMsg">Watch the TV. The game starts when the host is ready.</p><ol class="board-lb" id="jLb" style="max-width:460px;margin:0 auto;text-align:left"></ol></div>
+      <div id="jRound" class="hidden">
+        <div class="timer hidden" id="jTimer"></div>
+        <div id="jBoard"></div>
+        <div class="bar"><button class="go" type="button" id="jLock" disabled>Lock in</button><button class="ghost" type="button" id="jClear">Clear</button></div>
+        <div class="banner hidden" id="jResult"><div class="big" id="jScore"></div><p id="jMsg"></p></div>
+      </div>
+      <div id="jX" class="hidden"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/*QRLIB*/
+</script>
+<script>
+{
+/*DATA*/
+/*AVATARS*/
+const ART_URL = 'https://claude.ai/artifact/VBgkotb1UX47rB9Yz9ZrPe';
+const CATS = GROUPS.flatMap(g=>g.cats.map(c=>Object.assign(c,{group:g.id})));
+const byId = id => CATS.find(c=>c.id===id);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = (k,v) => { try { if (v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v) } catch(e) { return null } };
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a };
+const cleanName = s => String(s||'').replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁯]/g,'').trim().slice(0,16);
+
+const avOk = id => AVATARS.some(a=>a.id===id) ? id : AVATARS[0].id;
+let myAv = avOk(store('pyr-av') || AVATARS[Math.floor(Math.random()*AVATARS.length)].id);
+function drawAvPicker(){
+  $('jAv').innerHTML = AVATARS.map(a=>`<button type="button" data-av="${a.id}" aria-pressed="${a.id===myAv}" aria-label="${esc(a.name)}">${avatarSVG(a.id)}</button>`).join('');
+}
+$('jAv').addEventListener('click',e=>{const b=e.target.closest('[data-av]'); if(!b) return; myAv=avOk(b.dataset.av); store('pyr-av',myAv); drawAvPicker();});
+const chip = (name, av, cls='') => `<span class="pl ${cls}">${avatarSVG(avOk(av))}${esc(name)}</span>`;
+const lbRow = (s, extra='', cls='') => `<li class="${cls}"><span class="n">${avatarSVG(avOk(s[3]))}${esc(cleanName(s[0]))}</span><span class="s">${+s[1]||0}${extra}</span></li>`;
+
+function ranksOf(c){
+  return c.items.map((it,i)=>{
+    if (!c.ties) return String(i+1);
+    const first=c.items.findIndex(o=>o[1]===it[1]);
+    return (c.items.filter(o=>o[1]===it[1]).length>1?'=':'')+(first+1);
+  });
+}
+// a stone is right if it sits in a slot with the same rank (so tied answers can swap)
+function scoreOf(c, placed){
+  const r=ranksOf(c); let n=0;
+  for (let s=0;s<10;s++){ const it=placed[s]; if (it>=0 && r[it]===r[s]) n++; }
+  return n;
+}
+
+/* ---------- board: shared by solo, player and TV ---------- */
+// play: {cat, order, placed[slot]=item|-1, sel:item|null, locked, revealed}
+function newPlay(cat, order){ return {cat, order: order||shuffle([...Array(10).keys()]), placed:Array(10).fill(-1), sel:null, locked:false, revealed:false, last:-1}; }
+
+function boardHTML(p, opts={}){
+  const c=p.cat, r=ranksOf(c), rows=[[0],[1,2],[3,4,5],[6,7,8,9]];
+  const showAll=opts.showAnswers; // TV reveal: correct answers in place
+  const pyr = rows.map(row=>'<div class="r">'+row.map(s=>{
+    let it = showAll ? s : p.placed[s];
+    let cls='slot', inner=`<span class="rk">${r[s]}</span>`;
+    if (it>=0){
+      cls+=' full';
+      if (p.revealed && !showAll){ cls += r[it]===r[s] ? ' right' : ' wrong'; }
+      if (s===p.last) cls+=' drop';
+      inner += `<div class="nm">${esc(c.items[it][0])}</div>`;
+      if (showAll || (p.revealed && r[it]===r[s])) { if (c.items[it][1]) inner += `<div class="st">${esc(c.items[it][1])}</div>`; }
+      if (p.revealed && !showAll && r[it]!==r[s]) inner += `<div class="ans">Answer: ${esc(c.items[s][0])}</div>`;
+    } else if (p.revealed){
+      cls+=' wrong'; inner += `<div class="ans">Answer: ${esc(c.items[s][0])}</div>`;
+    }
+    if (p.sel!==null && p.placed[s]===p.sel) cls+=' sel';
+    const tag = opts.static ? 'div' : 'button';
+    const dis = (p.locked||p.revealed) && !opts.static ? ' disabled' : '';
+    return `<${tag} class="${cls}" ${opts.static?'':`type="button" data-slot="${s}"`}${dis} aria-label="Rank ${r[s]}${it>=0?': '+esc(c.items[it][0]):', empty'}">${inner}</${tag}>`;
+  }).join('')+'</div>').join('');
+  let tray='';
+  if (!opts.static){
+    const left=p.order.filter(i=>!p.placed.includes(i));
+    tray = `<div class="tray${left.length?'':' empty'}" data-tray="1">${left.map(i=>`<button type="button" class="chip${p.sel===i?' sel':''}" data-item="${i}"${p.locked||p.revealed?' disabled':''}>${esc(c.items[i][0])}</button>`).join('')}</div>`;
+  }
+  const hint = opts.static ? '' : `<p class="hint">${p.revealed?'':p.locked?'Locked in. Waiting for the reveal…':p.sel!==null?'Now tap a spot on the pyramid (or the tray to take it back).':'Tap a stone, then tap where it goes. Number 1 is the peak.'}</p>`;
+  return `<div class="cat"><h2>${esc(c.t)}</h2><p>${esc(c.n)}</p></div><div class="pyr">${pyr}</div><div class="ground"></div>${tray}${hint}`;
+}
+
+function boardClick(p, e, onChange){
+  if (p.locked || p.revealed) return;
+  const slotEl=e.target.closest('[data-slot]'), chipEl=e.target.closest('[data-item]'), trayEl=e.target.closest('[data-tray]');
+  p.last=-1;
+  if (chipEl){ const it=+chipEl.dataset.item; p.sel = p.sel===it ? null : it; }
+  else if (slotEl){
+    const s=+slotEl.dataset.slot, cur=p.placed[s];
+    if (p.sel!==null){
+      const from=p.placed.indexOf(p.sel);
+      if (from>=0) p.placed[from]=cur; // swap if moving between slots
+      p.placed[s]=p.sel; p.sel=null; p.last=s;
+    } else if (cur>=0) p.sel=cur;
+  } else if (trayEl && p.sel!==null){
+    const from=p.placed.indexOf(p.sel); if (from>=0) p.placed[from]=-1; p.sel=null;
+  } else return;
+  onChange();
+}
+
+/* ---------- category picker (solo + host) ---------- */
+function picker(groupsEl, selEl, getId, setId){
+  const draw=()=>{
+    const cur=byId(getId()); const g=GROUPS.find(x=>x.id===cur.group);
+    groupsEl.innerHTML=GROUPS.map(x=>`<button type="button" data-g="${x.id}" aria-pressed="${x.id===g.id}">${esc(x.name)}</button>`).join('');
+    selEl.innerHTML=g.cats.map(c=>`<option value="${c.id}">${esc(c.t)}</option>`).join('');
+    selEl.value=cur.id;
+  };
+  groupsEl.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const g=GROUPS.find(x=>x.id===b.dataset.g);if(g){setId(g.cats[0].id);draw()}});
+  selEl.addEventListener('change',()=>{setId(selEl.value);draw()});
+  return draw;
+}
+const randomCat = (not) => { let c; do{c=CATS[Math.floor(Math.random()*CATS.length)]}while(c.id===not); return c.id; };
+
+/* ---------- views ---------- */
+let view='home';
+function show(v){
+  view=v;
+  for (const [k,id] of [['home','vHome'],['solo','vSolo'],['host','vHost'],['join','vJoin']]) $(id).classList.toggle('hidden',k!==v);
+  $('homeBtn').classList.toggle('hidden',v==='home');
+  $('tagline').textContent = v==='host' ? 'Host screen: put this on the TV.' : v==='join' ? 'Game night on your phone.' : 'Every answer is shown. Can you put them in the right order?';
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+  const g=b.dataset.go; if(g==='solo') startSolo(store('pyr-cat')||'pl'); if(g==='host') startHost(); if(g==='join') openJoin('');
+}));
+$('homeBtn').addEventListener('click',()=>{ leaveOnline(); document.body.classList.remove('tv'); try{ if(document.fullscreenElement) document.exitFullscreen() }catch(e){} show('home'); try{history.replaceState(null,'',location.pathname+location.search)}catch(e){} });
+
+/* ---------- SOLO ---------- */
+let solo=null, soloCat='pl';
+const drawSoloPicker = picker($('sGroups'), $('sCat'), ()=>soloCat, id=>{ startSolo(id) });
+function startSolo(id){
+  soloCat = byId(id) ? id : 'pl'; store('pyr-cat',soloCat);
+  solo=newPlay(byId(soloCat)); show('solo'); drawSoloPicker(); renderSolo();
+  $('sResult').classList.add('hidden');
+}
+function renderSolo(){
+  $('sBoard').innerHTML=boardHTML(solo);
+  const full=!solo.placed.includes(-1);
+  $('sCheck').disabled=!full||solo.revealed; $('sClear').disabled=solo.revealed;
+}
+$('sBoard').addEventListener('click',e=>boardClick(solo,e,renderSolo));
+$('sClear').addEventListener('click',()=>{ solo.placed.fill(-1); solo.sel=null; renderSolo(); });
+$('sCheck').addEventListener('click',()=>{
+  solo.revealed=true; solo.sel=null; solo.last=-1; renderSolo();
+  const n=scoreOf(solo.cat,solo.placed);
+  const best=+store('pyr-best-'+solo.cat.id)||0; if(n>best) store('pyr-best-'+solo.cat.id,n);
+  $('sScore').textContent=`${n} / 10`;
+  $('sMsg').textContent=(n===10?'Perfect pyramid!':n>=7?'Brilliant ranking.':n>=4?'Solid effort.':'The stars weren\'t aligned this time.')+(n>best&&best?' New personal best!':best&&n<=best?` Your best here: ${best}/10.`:'');
+  $('sResult').classList.remove('hidden');
+});
+$('sAgain').addEventListener('click',()=>startSolo(soloCat));
+$('sNext').addEventListener('click',()=>{ const g=GROUPS.find(x=>x.id===byId(soloCat).group); const i=g.cats.findIndex(c=>c.id===soloCat); startSolo(g.cats[(i+1)%g.cats.length].id); });
+$('sRandom').addEventListener('click',()=>startSolo(randomCat(soloCat)));
+
+/*MINIGAMES*/
+/*ONLINE*/
+/* ---------- routing: QR links land on #join-abcd ---------- */
+function route(){
+  const m=/^#join-([a-z]{4})$/i.exec(location.hash||'');
+  if (m) { openJoin(m[1]); return true; }
+  return false;
+}
+window.addEventListener('hashchange',route);
+if (!route()) show('home');
+}
+</script>
+</body>
+</html>
