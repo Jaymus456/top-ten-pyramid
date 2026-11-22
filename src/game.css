@@ -203,3 +203,27 @@ button:active:not(:disabled){transform:scale(.96)}
 }
 .pyr.rev~.ground~.tray{display:none}
 .music .now.wide{white-space:normal;max-width:none;text-align:center}
+
+/* ---------- scoring extras ---------- */
+.dbl{margin:4px auto 6px;width:fit-content;padding:5px 14px;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--blue));color:#15121f;font:800 14px/1.2 "Inter Tight",Inter,sans-serif;letter-spacing:.02em;animation:pop .5s ease-out both}
+body.tv .dbl{font-size:20px;padding:8px 20px}
+.board-lb li .s em.perf{color:#e6d27a}
+.board-lb li .s em.spd{color:var(--blue);font-size:13px}
+.banner.perfect{border-color:#e6d27a;box-shadow:0 0 40px -10px rgba(230,210,122,.6)}
+.banner.perfect .big{color:#e6d27a}
+
+/* ---------- manage players ---------- */
+.manage{max-width:900px;margin:14px auto 0}
+.manage summary{cursor:pointer;font-weight:700;min-height:30px;display:flex;align-items:center;gap:6px}
+.manage summary span{color:var(--muted);font-weight:400}
+.mlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.mlist li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.04)}
+.mlist .n{display:flex;align-items:center;gap:8px;flex:1 1 160px}
+.mlist .n svg{width:32px;height:32px;flex:none}
+.mlist .dup{font-style:normal;font-size:12px;padding:2px 8px;border-radius:99px;background:rgba(242,169,126,.16);color:var(--coral)}
+.mbtns{display:flex;gap:6px}
+.mbtns button{min-height:38px;padding:0 12px;font-size:14px}
+.mform{display:flex;gap:6px;flex:1 1 220px}
+.mform input{flex:1;min-height:40px}
+.mform button{min-height:40px;padding:0 12px}
+#jManage{margin:0 auto 12px;max-width:560px;animation:slideDown .3s ease-out}

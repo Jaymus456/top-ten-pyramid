@@ -228,11 +228,12 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
           <p class="sub ctlnote" id="hCtlNote"></p>
         </div>
         <div class="panel hidden" id="hLbPanel"><h3 id="hLbTitle">Leaderboard</h3><ol class="board-lb" id="hLb"></ol></div>
-        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. At the start everyone votes for a theme to play all game; a tie goes to a blackjack showdown. Each round, rank a fresh pyramid for a point per correct stone. At half-time the wheel picks a mini-game worth 5 points.</p></div>
+        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. At the start everyone votes for a theme to play all game; a tie goes to a blackjack showdown. Each round, rank a fresh pyramid for a point per correct stone, +3 for a perfect pyramid, and the final round counts double. At half-time the wheel picks a mini-game worth 5 points. Level on points? The faster lock-in times win.</p></div>
       </div>
     </div>
     <div id="hStage" class="hidden">
       <div class="mini">Join with code <b id="hCode2"></b><span id="hRound"></span></div>
+      <div class="dbl hidden" id="hDouble">×2 Final round: double points</div>
       <div class="cat"><h2 id="hTitle"></h2><p id="hNote"></p></div>
       <div class="timer hidden" id="hTimer"></div>
       <div id="hBoard"></div>
@@ -250,8 +251,10 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
       <button class="go hidden" type="button" id="hSpin">Spin the wheel</button>
       <button class="ghost" type="button" id="hTv">TV mode</button>
       <button class="ghost hidden" type="button" id="hEnd">End game</button>
+      <button class="ghost" type="button" id="hSfx" aria-pressed="true">🔊 Sound effects on</button>
       <button class="ghost" type="button" id="hNew">New game code</button>
     </div>
+    <details class="manage panel" id="hManage"><summary>👥 Manage players <span id="hManageCount"></span></summary><p class="sub">Rename a joke name or one of two phones using the same name, or remove a player.</p><div id="hManageList"></div></details>
   </section>
 
   <!-- JOIN / PLAYER -->
@@ -268,8 +271,10 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
     <div id="jPlay" class="hidden">
       <div class="mini"><span id="jMeAv"></span><span id="jWho"></span><span>Code <b id="jCodeShow"></b></span><span id="jTotal"></span></div>
       <div id="jCtl" class="ctlbar hidden" aria-label="Host controls"></div>
+      <div id="jManage" class="panel manage hidden"><h3>Players</h3><p class="sub">Rename or remove a player. Everyone else sees it on the TV.</p><div id="jManageList"></div></div>
       <div id="jWait" class="wait"><div class="big" id="jWaitBig">You're in!</div><p id="jWaitMsg">Watch the TV. The game starts when the host is ready.</p><ol class="board-lb" id="jLb" style="max-width:460px;margin:0 auto;text-align:left"></ol></div>
       <div id="jRound" class="hidden">
+        <div class="dbl hidden" id="jDouble">×2 Final round: double points</div>
         <div class="timer hidden" id="jTimer"></div>
         <div id="jBoard"></div>
         <div class="bar"><button class="go" type="button" id="jLock" disabled>Lock in</button><button class="ghost" type="button" id="jClear">Clear</button></div>

@@ -19,11 +19,17 @@ A party quiz game. Every round shows a category and its ten answers, shuffled, a
 ### How a game night runs
 
 1. **Theme vote.** At the start, players vote for one of the six themes (🌍 ⚽ 🎵 🏛️ 🧠 🎬), which is used for all **6 rounds**. A tie goes to a **blackjack** showdown between one voter from each side, and the winner picks the theme.
-2. **Rank the pyramid** on your phone, with a fresh list from the theme each round: drag the stones into place, or tap a stone and then its spot. You score a point for every answer in the right spot.
+2. **Rank the pyramid** on your phone, with a fresh list from the theme each round: drag the stones into place, or tap a stone and then its spot. You score a point for every answer in the right spot, plus **3 bonus points for a perfect pyramid**. **Round 6 counts double.**
 3. **Half-time (after round 3):** the wheel picks one of seven mini-games. Each has exactly one winner, who gets 5 points:
    Spot the Difference · 10-Second Challenge · Finish the Sentence · Guess the Song (emoji clues) · The Memory Test · Who Am I? (clues) · Higher or Lower
 4. **Host check:** for answers the game can't judge with certainty (10-Second Challenge, Memory Test, and close guesses in Guess the Song and Who Am I), the host reviews them on the TV or their phone and can mark answers right or wrong before the winner is confirmed.
-5. A podium shows the final scores. Nothing is saved between games: each game starts from zero.
+5. A podium shows the final scores. Players level on points are split by speed: the lower total lock-in time ranks higher. Nothing is saved between games: each game starts from zero.
+
+**Dropped phones:** if a phone sleeps or loses connection, reopen the game link and it rejoins automatically with the same name, score and the stones already placed that round.
+
+**Managing players:** under **👥 Manage players** on the TV (or **👥 Players** in the phone host's bar) you can rename or remove anyone, which also sorts out two phones using the same name.
+
+**Sound effects:** the TV plays a click when someone locks in, a drumroll as the pyramid is revealed, and fanfares for winners, on top of the music. Turn them off with **🔊 Sound effects**.
 
 ## Background music
 

@@ -22,7 +22,10 @@ const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ';
 const newCode = () => Array.from({length:4},()=>CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]).join('');
 const roomName = code => 'pyr-'+code.toLowerCase();
 const joinUrl = code => (IN_CLAUDE ? ART_URL : location.href.split('#')[0])+'#join-'+code.toLowerCase();
-const TOTAL_ROUNDS=6, HALF_AFTER=3, MG_POINTS=5;
+const TOTAL_ROUNDS=6, HALF_AFTER=3, MG_POINTS=5, PERFECT_BONUS=3;
+// ties on points go to whoever was faster: s[4] is total seconds taken to lock in
+const lbSort = a => (a||[]).slice().sort((x,y)=>(y[1]-x[1]) || ((+x[4]||0)-(+y[4]||0)));
+const roundPts = (n, round) => (n + (n===10?PERFECT_BONUS:0)) * (round===TOTAL_ROUNDS?2:1);
 const now = () => Date.now();
 const rint = n => Math.floor(Math.random()*n);
 const pickR = a => a[rint(a.length)];
@@ -116,6 +119,7 @@ window.__pyrForceGame = g => { FORCE_MG=g; };
 // test helpers for the host screen only: jump to half-time, read the current mini-game's answers
 window.__pyrTest = {
   half: () => { if (G) { G.round=HALF_AFTER; goHalf(); } },
+  setRound: n => { if (G) G.round=n; },
   review: () => G && G.L.mg ? JSON.parse(JSON.stringify({rev:G.L.mg.rev||null, rv:G.L.mg.rv||null})) : null,
   state: () => G ? JSON.parse(JSON.stringify({phase:G.phase, round:G.round, scores:G.scores, vote:G.vote, tb:G.tb, mg:G.mg})) : null,
   cheat: () => { if(!G||!G.mg) return null; const m=G.mg;
@@ -128,12 +132,12 @@ window.__pyrTest = {
     return null; }
 };
 
-function newGame(code){ return {code, phase:'lobby', round:0, theme:null, cat:null, order:[], dur:90, scores:[], used:[], vote:null, tb:null, mg:null, mgId:0, dl:0, seq:0, players:[], L:{}}; }
+function newGame(code){ return {kick:{}, ren:{}, peerList:[], sfx:true, code, phase:'lobby', round:0, theme:null, cat:null, order:[], dur:90, scores:[], used:[], vote:null, tb:null, mg:null, mgId:0, dl:0, seq:0, players:[], L:{}}; }
 async function startHost(forceNew){
   leaveOnline(); show('host');
   $('hNotice').classList.add('hidden');
   G = newGame(newCode()); // every game starts fresh: no saved scores
-  renderHost(); initMusic();
+  renderHost(); initMusic(); sfx.unlock();
   hostTimer=setInterval(()=>{ if(G){ hostStep(); renderHostDynamic(); } },250);
   const R = await getRoom();
   if (!R){ $('hNotice').textContent=OFFLINE_MSG; $('hNotice').classList.remove('hidden'); return; }
@@ -146,13 +150,16 @@ async function startHost(forceNew){
   }
   if (!live || !G) return;
   live.onPeers(ch=>{ if(!G) return;
-    const map=new Map();
+    const map=new Map(), list=[];
     for (const p of ch.peers){ const pr=p.presence;
       if (p.sameTab || !pr || pr.role!=='player' || pr.code!==G.code || typeof pr.name!=='string') continue;
-      const name=cleanName(pr.name)||'Player', key=name.toLowerCase();
-      const prev=map.get(key); if (!prev || p.updatedAt>prev.at) map.set(key,{name,key,av:avOk(pr.av),p:pr,at:p.updatedAt});
+      if (G.kick[p.peer]) continue; // removed by the host
+      const name=G.ren[p.peer] || cleanName(pr.name) || 'Player', key=name.toLowerCase(), at=p.updatedAt||0;
+      list.push({peer:p.peer, name, key, av:avOk(pr.av)});
+      const prev=map.get(key); if (!prev || at>=prev.at) map.set(key,{name,key,av:avOk(pr.av),p:pr,at,peer:p.peer});
     }
-    G.players=[...map.values()];
+    G.players=[...map.values()]; G.peerList=list.slice(0,24);
+    noteAnswers();
     trackCtl();
     hostStep(); renderHost();
   });
@@ -164,14 +171,15 @@ function pub(){
   const P={role:'host',code:G.code,phase:G.phase,round:G.round,total:TOTAL_ROUNDS,theme:G.theme||null,gid:G.gid||0,cat:G.cat,order:G.order,dur:G.dur,scores:G.scores.slice(0,30),
     tl:G.dl?Math.max(0,G.dl-now()):0, seq:G.seq,
     vote:G.phase==='vote'?G.vote:null, tb:G.phase==='tb'?G.tb:null, mg:(G.phase==='mg')?G.mg:null,
-    ctl:G.ctlName||'', nx:nextLabel(), rv:rvPub()};
+    ctl:G.ctlName||'', nx:nextLabel(), rv:rvPub(),
+    kick:Object.keys(G.kick).slice(-20), ren:renPub(), pl:G.phase==='mg'?null:G.peerList.map(x=>[x.peer,x.name,x.av])};
   if (live) live.presence(P).catch(()=>{});
   renderHost();
 }
 const findP = name => G.players.find(p=>p.key===String(name).toLowerCase());
 function scoreRow(name){
   const key=name.toLowerCase(); let row=G.scores.find(s=>s[0].toLowerCase()===key);
-  if(!row){ const p=findP(name); row=[name,0,0,p?p.av:AVATARS[0].id]; G.scores.push(row); }
+  if(!row){ const p=findP(name); row=[name,0,0,p?p.av:AVATARS[0].id,0,0]; G.scores.push(row); }
   return row;
 }
 const mgOf = p => (p.p.mg && p.p.mg.id===G.mg.id) ? p.p.mg : null;
@@ -214,20 +222,37 @@ function dealTB(){
 }
 function startRound(cid){
   G.cat=cid; G.used.push(cid); G.order=shuffle([...Array(10).keys()]);
+  G.L.ans={}; G.L.lockAt={}; G.L.roundAt=now();
   G.phase='play'; G.dl=G.dur?now()+G.dur*1000:0; G.L.autoRev=0; pub();
 }
 function hostReveal(){
   if (!G || G.phase!=='play') return;
-  const c=byId(G.cat), seen=new Set();
-  for (const p of G.players){
-    if (seen.has(p.key)) continue; seen.add(p.key);
-    const pr=p.p;
-    const placed=(pr.round===G.round && Array.isArray(pr.ans) && pr.ans.length===10) ? pr.ans.map(x=>Number.isInteger(x)&&x>=0&&x<10?x:-1) : Array(10).fill(-1);
-    const n=scoreOf(c,placed), row=scoreRow(p.name);
-    row[1]+=n; row[2]=n; row[3]=p.av;
+  noteAnswers();
+  const c=byId(G.cat), t=now(), rs=G.L.roundAt||t, cap=Math.max(1000, G.dur ? Math.min(G.dur*1000, t-rs) : t-rs);
+  const done=new Set(); let perfect=0;
+  // everyone who sent answers this round, even if their phone has since dropped out
+  for (const [key, a] of Object.entries(G.L.ans||{})){
+    if (a.r!==G.round) continue; done.add(key);
+    const placed=a.ans.map(x=>Number.isInteger(x)&&x>=0&&x<10?x:-1);
+    const n=scoreOf(c,placed), pts=roundPts(n,G.round), row=scoreRow(a.name);
+    const took=G.L.lockAt[key] ? Math.min(cap, G.L.lockAt[key]-rs) : cap;
+    row[1]+=pts; row[2]=pts; row[3]=a.av||row[3]; row[4]=Math.round(((+row[4]||0)+took/1000)*10)/10; row[5]=n;
+    if (n===10) perfect++;
   }
-  for (const row of G.scores) if(!seen.has(row[0].toLowerCase())) row[2]=0;
+  for (const row of G.scores) if(!done.has(row[0].toLowerCase())){ row[2]=0; row[5]=0; row[4]=Math.round(((+row[4]||0)+cap/1000)*10)/10; }
   G.phase='reveal'; G.dl=0; pub();
+  sfx.reveal(perfect>0);
+}
+// remember each player's latest answers and when they locked in
+function noteAnswers(){
+  if (!G || G.phase!=='play') return;
+  const t=now(); G.L.ans=G.L.ans||{}; G.L.lockAt=G.L.lockAt||{};
+  for (const p of G.players){ const pr=p.p;
+    if (pr.round!==G.round || !Array.isArray(pr.ans) || pr.ans.length!==10) continue;
+    G.L.ans[p.key]={r:G.round, ans:pr.ans.slice(), name:p.name, av:p.av, done:!!pr.done};
+    if (pr.done && !G.L.lockAt[p.key]){ G.L.lockAt[p.key]=t; sfx.click(); }
+    else if (!pr.done && G.L.lockAt[p.key]) delete G.L.lockAt[p.key];
+  }
 }
 function goHalf(){ G.phase='half'; G.mg=null; G.dl=now()+20000; pub(); }
 function spinWheel(){
@@ -235,7 +260,7 @@ function spinWheel(){
   const g = FORCE_MG && MG_LIST.some(m=>m.id===FORCE_MG) ? FORCE_MG : pickR(MG_LIST).id;
   G.mgId++; G.mg={id:G.mgId, g, st:'spin', turns:5+rint(3)}; G.phase='mg'; G.L.mgAt=now()+5600; G.dl=0; pub();
 }
-function goFinal(){ G.phase='final'; G.dl=0; pub(); }
+function goFinal(){ G.phase='final'; G.dl=0; pub(); sfx.fanfare(true); }
 function hostNext(){
   if (!G) return;
   if (G.phase==='lobby') { G.scores=[]; G.round=0; G.used=[]; G.theme=null; return goVote(); }
@@ -246,9 +271,9 @@ function mgWin(name){
   if (!G.mg || G.mg.win || G.mg.st==='done') return;
   G.mg.win=name; G.mg.wav=findP(name)?.av||scoreRow(name)[3];
   scoreRow(name)[1]+=MG_POINTS;
-  G.mg.st='done'; G.dl=0; pub();
+  G.mg.st='done'; G.dl=0; pub(); sfx.fanfare();
 }
-function mgNoWinner(){ G.mg.win=''; G.mg.st='done'; G.dl=0; pub(); }
+function mgNoWinner(){ G.mg.win=''; G.mg.st='done'; G.dl=0; pub(); sfx.sad(); }
 // a wrong guess that might still be right (typo, nickname, partial name): the host decides
 function nearMiss(g, keys){
   const q=normA(g); if (q.length<3) return false;
@@ -303,6 +328,31 @@ function hostCmds(){
   return false;
 }
 const DURS=[0,45,60,90,120];
+/* ----- kick and rename (by device, so two phones with the same name can be told apart) ----- */
+function renPub(){ const o={}; for (const x of G.peerList) if (G.ren[x.peer]) o[x.peer]=G.ren[x.peer]; return o; }
+function moveKey(oldK, newK){ // carry a player's per-game records over to their new name
+  for (const m of [G.L.firstSeen, G.L.cmdSeen, G.L.ans, G.L.lockAt]) if (m && oldK in m && !(newK in m)){ m[newK]=m[oldK]; delete m[oldK]; }
+}
+function renamePeer(peer, newName){
+  const x=G.peerList.find(q=>q.peer===peer), n=cleanName(newName); if (!x || !n || n===x.name) return false;
+  const k=n.toLowerCase();
+  if (G.peerList.some(q=>q.peer!==peer && q.key===k)) return false; // that name is taken
+  const shared=G.peerList.some(q=>q.peer!==peer && q.key===x.key); // a duplicate keeps the old name and score
+  if (!shared){ const row=G.scores.find(r=>r[0].toLowerCase()===x.key); if (row && !G.scores.some(r=>r[0].toLowerCase()===k)) row[0]=n; moveKey(x.key,k); if (G.L.ans&&G.L.ans[k]) G.L.ans[k].name=n; }
+  const oldK=x.key; G.ren[peer]=n; x.name=n; x.key=k;
+  if (G.ctl===oldK && !shared){ G.ctl=k; G.ctlName=n; }
+  pub(); return true;
+}
+function kickPeer(peer){
+  const x=G.peerList.find(q=>q.peer===peer); if (!x) return;
+  G.kick[peer]=1;
+  if (!G.peerList.some(q=>q.peer!==peer && q.key===x.key)){
+    G.scores=G.scores.filter(r=>r[0].toLowerCase()!==x.key);
+    for (const m of [G.L.firstSeen, G.L.ans, G.L.lockAt]) if (m) delete m[x.key];
+  }
+  G.peerList=G.peerList.filter(q=>q.peer!==peer); G.players=G.players.filter(q=>q.peer!==peer);
+  trackCtl(); pub();
+}
 function runCmd(c){
   const ph=G.phase, a=c.a;
   if (a==='start' && (ph==='lobby'||ph==='final')){ if (DURS.includes(c.x)){ G.dur=c.x; $('hDur').value=String(c.x); } G.phase='lobby'; return hostNext(); }
@@ -311,6 +361,8 @@ function runCmd(c){
   if (a==='next' && (ph==='reveal' || (ph==='mg'&&G.mg&&G.mg.st==='done'))) return hostNext();
   if (a==='spin' && ph==='half') return spinWheel();
   if (a==='end' && ph!=='lobby' && ph!=='final') return goFinal();
+  if (a==='kick' && typeof c.x==='string'){ const x=G.peerList.find(q=>q.peer===c.x); if (x && x.key!==G.ctl) kickPeer(c.x); return; } // the phone host can't remove themselves
+  if (a==='ren' && c.x && typeof c.x.p==='string') return renamePeer(c.x.p, String(c.x.n||''));
   if (ph==='mg' && G.mg && G.mg.st==='review'){
     if (a==='rv'){ const [x,y]=String(c.x).split(':').map(Number); return reviewToggle(x,y); }
     if (a==='rva') return reviewAccept(+c.x);
@@ -373,7 +425,7 @@ function hostStep(){
       if (tb.s.every(s=>s!=='play')){
         const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h));
         if (v[0]===v[1]){ tb.w=-2; tb.m= v[0]<0 ? 'Both bust! Dealing again…' : `Push on ${v[0]}! Dealing again…`; G.L.redeal=t+3000; }
-        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; }
+        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; sfx.chime(); }
         ch=true;
       }
     } else if (tb.w===-2){
@@ -519,7 +571,9 @@ function drawQr(code){
     cv.setAttribute('role','img'); cv.setAttribute('aria-label','QR code to join this game'); el.appendChild(cv);
   }catch(e){ el.classList.add('hidden'); }
 }
-const lbSorted = () => G.scores.slice().sort((a,b)=>b[1]-a[1]);
+const lbSorted = () => lbSort(G.scores);
+// shows lock-in time only where it decides a tie
+function speedTag(lb, i){ const s=lb[i]; return lb.some((o,j)=>j!==i && o[1]===s[1]) ? `<em class="spd">⚡ ${(+s[4]||0).toFixed(1)}s</em>` : ''; }
 function wheelSVG(){
   const n=MG_LIST.length, R=150, seg=360/n;
   let g='';
@@ -559,10 +613,12 @@ function renderHost(){
   if (x) renderX(lb);
   renderHostDynamic();
   applyVol();
+  drawHostManage();
 }
 function renderRankStage(lb){
   const c=byId(G.cat);
   $('hRound').textContent=`Round ${G.round} of ${TOTAL_ROUNDS}${G.theme?' · '+themeName(G.theme):''}`;
+  $('hDouble').classList.toggle('hidden', G.round!==TOTAL_ROUNDS);
   const p={cat:c,order:G.order,placed:Array(10).fill(-1),sel:null,locked:true,revealed:false,last:-1};
   setH($('hBoard'), boardHTML(p,{static:true,noHead:true,showAnswers:G.phase==='reveal'}), G.phase+G.round);
   $('hTitle').textContent=c.t; $('hNote').textContent=c.n;
@@ -575,7 +631,7 @@ function renderRankStage(lb){
   } else {
     $('hStatusH').textContent='Scores after this round';
     $('hDone').classList.add('hidden'); $('hRoundLb').classList.remove('hidden');
-    setH($('hRoundLb'), lb.map((s,i)=>lbRow(s,`<em>+${s[2]}</em>`,'',i+4)).join('') || '<li><span class="n">No answers this round</span></li>');
+    setH($('hRoundLb'), lb.map((s,i)=>lbRow(s,`<em>+${s[2]}</em>${+s[5]===10?'<em class="perf">★ Perfect</em>':''}`,'',i+4)).join('') || '<li><span class="n">No answers this round</span></li>');
   }
 }
 function tvHead(title, sub){ return `<div class="mini">Join with code <b>${esc(G.code)}</b><span>${G.round?`Round ${G.round} of ${TOTAL_ROUNDS}${G.theme?' · '+esc(themeName(G.theme)):''}`:''}</span></div><div class="cat"><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="xTimer"></div>`; }
@@ -605,7 +661,7 @@ function renderX(lb){
   else if (ph==='final'){
     const top=lb.slice(0,3), order=[1,0,2].filter(i=>top[i]);
     h = `<div class="cat"><h2>Final standings</h2><p>Thanks for playing Top Ten Pyramid.</p></div><div class="podium">${order.map(i=>`<div class="pod p${i+1}">${avatarSVG(avOk(top[i][3]))}<b>${esc(cleanName(top[i][0]))}</b><span>${top[i][1]} pts</span><div class="step">${i+1}</div></div>`).join('')}</div>`
-      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,'','',i+3)).join('')}</ol></div>`;
+      + `<div class="panel" style="max-width:560px;margin:16px auto 0"><ol class="board-lb">${lb.map((s,i)=>lbRow(s,speedTag(lb,i),'',i+3)).join('')}</ol>${lb.some((s,i)=>speedTag(lb,i))?'<p class="hint">⚡ Level on points: the faster total lock-in time ranks higher.</p>':''}</div>`;
   }
   setH(el, h, `${ph}|${m?m.id+m.st+(m.s??'')+'.'+(m.n??''):''}|${G.tb&&ph==='tb'?G.tb.hand+':'+G.tb.w:''}`);
   if (key){ // start the spin on the freshly drawn wheel
@@ -699,6 +755,77 @@ $('hTv').addEventListener('click',()=>{
 });
 
 
+
+/* ----- manage players panel: shared by the TV and the phone host ----- */
+function manageHTML(list, edit, arm, selfKey){
+  if (!list || !list.length) return '<p class="sub">No players yet.</p>';
+  const counts={}; list.forEach(([,n])=>{ const k=n.toLowerCase(); counts[k]=(counts[k]||0)+1; });
+  return `<ul class="mlist">${list.map(([peer,name,av])=>{ const k=name.toLowerCase(), dup=counts[k]>1, me=selfKey && k===selfKey && !dup;
+    if (edit===peer) return `<li class="editing"><span class="n">${avatarSVG(avOk(av))}</span><form data-mform="${esc(peer)}" class="mform"><input name="n" maxlength="16" value="${esc(name)}" aria-label="New name for ${esc(name)}" autocomplete="off"><button class="go" type="submit">Save</button><button class="ghost" type="button" data-mcancel="1">Cancel</button></form></li>`;
+    return `<li><span class="n">${avatarSVG(avOk(av))}<b>${esc(name)}</b>${dup?'<em class="dup">same name on 2 phones</em>':''}${me?'<em class="dup">you</em>':''}</span><span class="mbtns"><button class="ghost" type="button" data-mren="${esc(peer)}">Rename</button>${me?'':`<button class="ghost danger" type="button" data-mkick="${esc(peer)}">${arm===peer?'Tap again to remove':'Remove'}</button>`}</span></li>`; }).join('')}</ul>`;
+}
+function bindManage(root, ui){ // ui: {list(), rename(peer,name), kick(peer), redraw()}
+  root.addEventListener('click',e=>{
+    const t=e.target, st=ui.state;
+    const r=t.closest('[data-mren]'); if (r){ st.edit=r.dataset.mren; st.arm=null; ui.redraw(true); const i=root.querySelector('.mform input'); if(i){ i.focus(); i.select(); } return; }
+    if (t.closest('[data-mcancel]')){ st.edit=null; ui.redraw(true); return; }
+    const k=t.closest('[data-mkick]'); if (k){ const peer=k.dataset.mkick;
+      if (st.arm!==peer){ st.arm=peer; ui.redraw(true); clearTimeout(st.t); st.t=setTimeout(()=>{ st.arm=null; ui.redraw(true); },3000); return; }
+      st.arm=null; ui.kick(peer); ui.redraw(true); }
+  });
+  root.addEventListener('submit',e=>{
+    const f=e.target.closest('[data-mform]'); if (!f) return; e.preventDefault();
+    const n=cleanName(f.elements.n.value); if (n) ui.rename(f.dataset.mform, n);
+    ui.state.edit=null; ui.redraw(true);
+  });
+}
+const hostManage={state:{}};
+function drawHostManage(force){
+  if (!G) return; const el=$('hManageList');
+  if (!force && el.contains(document.activeElement) && document.activeElement.tagName==='INPUT') return; // don't wipe a name being typed
+  setH(el, manageHTML(G.peerList.map(x=>[x.peer,x.name,x.av]), hostManage.state.edit, hostManage.state.arm, ''));
+  $('hManageCount').textContent = G.peerList.length ? `(${G.peerList.length})` : '';
+}
+bindManage($('hManageList'), {state:hostManage.state, rename:(p,n)=>{ if(G && !renamePeer(p,n)) flashNote('hManageList','That name is already taken.'); }, kick:p=>{ if(G) kickPeer(p); }, redraw:drawHostManage});
+function flashNote(id,msg){ const el=$(id); const n=document.createElement('p'); n.className='hint'; n.textContent=msg; el.appendChild(n); setTimeout(()=>n.remove(),2500); }
+
+
+/* ---------- sound effects (TV only), made with the Web Audio API: nothing to download ---------- */
+const sfx=(()=>{
+  let ac=null, on=true, master=null;
+  const ctx=()=>{ if (!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=.5; master.connect(ac.destination); }catch(e){ ac=null; } }
+    if (ac && ac.state==='suspended') ac.resume().catch(()=>{}); return ac; };
+  const ok=()=>on && !!G && !!ctx();
+  function tone(f, t0, dur, {type='sine', vol=.3, slide=0}={}){
+    const o=ac.createOscillator(), g=ac.createGain(); o.type=type; o.frequency.setValueAtTime(f,t0); if (slide) o.frequency.exponentialRampToValueAtTime(f*slide,t0+dur);
+    g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(vol,t0+.012); g.gain.exponentialRampToValueAtTime(.0008,t0+dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+.05);
+  }
+  function noise(t0, dur, vol, hp=800){
+    const n=Math.floor(ac.sampleRate*dur), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource(), f=ac.createBiquadFilter(), g=ac.createGain(); src.buffer=b; f.type='highpass'; f.frequency.value=hp;
+    g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0008,t0+dur); src.connect(f); f.connect(g); g.connect(master); src.start(t0);
+  }
+  return {
+    unlock: ctx,
+    set on(v){ on=!!v; }, get on(){ return on; },
+    click(){ if(!ok()) return; const t=ac.currentTime; tone(1500,t,.05,{type:'square',vol:.12}); tone(2300,t+.04,.06,{type:'square',vol:.08}); },
+    // a snare roll that builds while the pyramid fills in, then a cymbal as number 1 lands
+    reveal(perfect){ if(!ok()) return; const t=ac.currentTime, len=3.1;
+      for (let x=0;x<len;x+=.045){ noise(t+x,.06,.05+.25*(x/len),1800); }
+      noise(t+len,1.3,.45,4000); tone(98,t+len,.5,{type:'triangle',vol:.35,slide:.6});
+      if (perfect) [1047,1319,1568,2093].forEach((f,i)=>tone(f,t+len+.35+i*.09,.6,{vol:.16})); },
+    fanfare(big){ if(!ok()) return; const t=ac.currentTime+.05, N=[[523,0,.16],[659,.16,.16],[784,.32,.16],[1047,.5,big?.9:.6]];
+      N.forEach(([f,d,l])=>{ tone(f,t+d,l,{type:'sawtooth',vol:.09}); tone(f/2,t+d,l,{type:'triangle',vol:.14}); });
+      if (big) [[784,1.5,.18],[1047,1.7,1.1]].forEach(([f,d,l])=>{ tone(f,t+d,l,{type:'sawtooth',vol:.09}); tone(f*1.25,t+d,l,{type:'triangle',vol:.08}); });
+      noise(t+.5,.7,.18,5000); },
+    chime(){ if(!ok()) return; const t=ac.currentTime; [880,1175,1568].forEach((f,i)=>tone(f,t+i*.1,.5,{vol:.18})); },
+    sad(){ if(!ok()) return; const t=ac.currentTime; [[392,0],[370,.3],[349,.6]].forEach(([f,d])=>tone(f,t+d,.35,{type:'triangle',vol:.2})); tone(330,t+.9,.8,{type:'triangle',vol:.2,slide:.94}); }
+  };
+})();
+document.addEventListener('pointerdown',()=>{ if (G) sfx.unlock(); },{passive:true}); // browsers only allow sound after a tap
+$('hSfx').addEventListener('click',()=>{ sfx.on=!sfx.on; $('hSfx').setAttribute('aria-pressed',sfx.on); $('hSfx').textContent = sfx.on ? '🔊 Sound effects on' : '🔇 Sound effects off'; if (sfx.on){ sfx.unlock(); sfx.chime(); } });
+
 /* ---------- background music (host/TV only): SoundCloud's official embedded player ---------- */
 const MUSIC_URL='https://soundcloud.com/delicieuse-musique/sets/jazz-house';
 let music={init:false, w:null, ready:false, started:false, playing:false, base:60, n:0};
@@ -750,24 +877,29 @@ let me=null, playTick=null;
 function openJoin(code){
   leaveOnline(); show('join');
   $('jForm').classList.remove('hidden'); $('jPlay').classList.add('hidden'); $('jNotice').classList.add('hidden'); $('jErr').textContent='';
-  $('jCode').value=(code||'').toUpperCase(); $('jName').value=store('pyr-name')||'';
+  let last=null; try{ last=JSON.parse(store('pyr-last')||'null'); }catch(e){}
+  if (last && now()-last.at>4*3600e3) last=null;
+  $('jCode').value=(code||(last&&last.code)||'').toUpperCase(); $('jName').value=store('pyr-name')||'';
   drawAvPicker();
   ($('jCode').value ? $('jName') : $('jCode')).focus({preventScroll:true});
+  // reopening the game you were just in (e.g. the phone went to sleep): rejoin straight away
+  if (code && last && last.code===code.toUpperCase() && $('jName').value){ $('jErr').textContent='Rejoining your game…'; setTimeout(()=>{ if(view==='join' && !me) $('jForm').requestSubmit(); },150); }
 }
 $('jForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const code=$('jCode').value.toUpperCase().replace(/[^A-Z]/g,''), name=cleanName($('jName').value);
   if (code.length!==4){ $('jErr').textContent='Codes are 4 letters, shown on the host screen.'; return; }
   if (!name){ $('jErr').textContent='Pop your nickname in so the TV can show it.'; return; }
-  store('pyr-name',name); $('jErr').textContent='Connecting…';
+  store('pyr-name',name); store('pyr-last',JSON.stringify({code,at:now()})); $('jErr').textContent='Connecting…';
   const R=await getRoom();
   if (!R){ $('jErr').textContent=''; $('jNotice').textContent=OFFLINE_MSG; $('jNotice').classList.remove('hidden'); return; }
   try { live=await joinRoom(R, roomName(code), false); } catch(err){ $('jErr').textContent = ROOM_KIND==='peer' ? PEER_FAIL : 'Could not join that game. Check the code and try again.'; return; }
-  me={code,name,host:null,play:null,round:0,seenHost:false,seq:-1,dlLocal:0,key:'',bjN:0,mgP:null,vote:null,pick:null,lock:0,cmdN:0,ctlHTML:'',ctlDur:90,endArm:0};
+  me={peer:'',mOpen:false,mState:{},code,name,host:null,play:null,round:0,seenHost:false,seq:-1,dlLocal:0,key:'',bjN:0,mgP:null,vote:null,pick:null,lock:0,cmdN:0,ctlHTML:'',ctlDur:90,endArm:0};
   $('jErr').textContent=''; $('jForm').classList.add('hidden'); $('jPlay').classList.remove('hidden');
   $('jWho').textContent=name; $('jCodeShow').textContent=code; $('jMeAv').innerHTML=avatarSVG(myAv);
   pushMe({});
   live.onPeers(ch=>{ if (!me) return;
+    const mine=ch.peers.find(p=>p.sameTab); if (mine) me.peer=mine.peer;
     const h=ch.peers.find(p=>!p.sameTab && p.presence && p.presence.role==='host' && p.presence.code===me.code);
     if (h) onHost(h.presence); });
   playTick=setInterval(playerTimers,300);
@@ -777,11 +909,15 @@ $('jForm').addEventListener('submit',async e=>{
 function pushMe(extra){
   if (!me || !live) return;
   const p=me.play;
+  saveDraft();
   live.presence(Object.assign({role:'player',code:me.code,name:me.name,av:myAv,round:p?me.round:0,ans:p?p.placed.slice():[],done:!!(p&&p.locked)}, extra)).catch(()=>{});
 }
 const sendMg = () => pushMe({mg:me.mgP});
 function onHost(h){
   me.seenHost=true;
+  if (me.peer && Array.isArray(h.kick) && h.kick.includes(me.peer)) return kicked();
+  const nn = me.peer && h.ren && h.ren[me.peer];
+  if (nn && nn!==me.name){ me.name=cleanName(nn)||me.name; store('pyr-name',me.name); $('jWho').textContent=me.name; me.ctlHTML=''; pushMe({}); }
   if (h.seq!==me.seq){ me.seq=h.seq; me.dlLocal = h.tl ? now()+h.tl : 0; }
   me.host=h;
   renderCtl(h);
@@ -807,15 +943,30 @@ function onRank(h){
   const c=byId(h.cat);
   phonePanel('jRound');
   if (h.phase==='play' && c && Array.isArray(h.order) && h.order.length===10){
-    if (!me.play || me.round!==h.round){ me.round=h.round; me.play=newPlay(c,h.order.slice()); $('jResult').classList.add('hidden'); pushMe({}); }
+    if (!me.play || me.round!==h.round){ me.round=h.round; me.play=newPlay(c,h.order.slice()); restoreDraft(me.play,h); $('jResult').classList.add('hidden'); pushMe({}); }
   } else if (h.phase==='reveal' && me.play && !me.play.revealed){
     me.play.revealed=true; me.play.sel=null; me.play.last=-1;
-    const n=scoreOf(me.play.cat,me.play.placed), lb=(h.scores||[]).slice().sort((a,b)=>b[1]-a[1]), pos=lb.findIndex(s=>s[0].toLowerCase()===me.name.toLowerCase());
-    $('jScore').textContent=`+${n} point${n===1?'':'s'}`;
-    $('jMsg').textContent=`${n} of 10 in the right spot.`+(pos>=0?` You're ${ordinal(pos+1)} of ${lb.length}.`:'');
+    const n=scoreOf(me.play.cat,me.play.placed), lb=lbSort(h.scores), pos=lb.findIndex(s=>s[0].toLowerCase()===me.name.toLowerCase());
+    const pts=roundPts(n,h.round), dbl=h.round===TOTAL_ROUNDS;
+    $('jScore').textContent = n===10 ? `★ Perfect! +${pts}` : `+${pts} point${pts===1?'':'s'}`;
+    $('jMsg').textContent=`${n} of 10 in the right spot`+(n===10?` (+${PERFECT_BONUS} bonus)`:'')+(dbl?', doubled in the final round':'')+'.'+(pos>=0?` You're ${ordinal(pos+1)} of ${lb.length}.`:'');
+    $('jResult').classList.toggle('perfect', n===10);
     $('jResult').classList.remove('hidden');
   }
+  $('jDouble').classList.toggle('hidden', h.round!==TOTAL_ROUNDS || h.phase!=='play');
   me.key='rank'; renderPlayer();
+}
+// keep this round's answers on the phone, so a dropped connection or reload doesn't lose them
+function saveDraft(){
+  if (!me || !me.play || !me.host || me.host.phase!=='play' || me.play.revealed) return;
+  store('pyr-draft', JSON.stringify({code:me.code, name:me.name.toLowerCase(), r:me.round, cat:me.play.cat.id, gid:me.host.gid||0, placed:me.play.placed, locked:me.play.locked}));
+}
+function restoreDraft(p, h){
+  let d=null; try{ d=JSON.parse(store('pyr-draft')||'null'); }catch(e){}
+  if (!d || d.code!==me.code || d.name!==me.name.toLowerCase() || d.r!==h.round || d.cat!==p.cat.id || d.gid!==(h.gid||0) || !Array.isArray(d.placed) || d.placed.length!==10) return;
+  const ok=d.placed.every(x=>Number.isInteger(x)&&x>=-1&&x<10) && new Set(d.placed.filter(x=>x>=0)).size===d.placed.filter(x=>x>=0).length;
+  if (!ok) return;
+  p.placed=d.placed.slice(); p.locked=!!d.locked && !p.placed.includes(-1);
 }
 function phonePanel(id){
   for (const k of ['jWait','jRound','jX']) $(k).classList.toggle('hidden', k!==id);
@@ -829,7 +980,7 @@ function showWait(){
   if (h && h.phase==='final'){ $('jWaitBig').textContent='Game over!'; $('jWaitMsg').textContent='Final standings:'; }
   else if (h && isCtl()){ $('jWaitBig').textContent="You're the host!"; $('jWaitMsg').textContent="You run the game from the bar above: start it when everyone's in. You still play too."; }
   else if (h){ $('jWaitBig').textContent="You're in!"; $('jWaitMsg').textContent = h.ctl ? `Watch the TV. ${h.ctl} is the host and will start the game.` : 'Watch the TV. The game starts when the host is ready.'; }
-  const lb=((h&&h.scores)||[]).slice().sort((a,b)=>b[1]-a[1]);
+  const lb=lbSort(h&&h.scores);
   setH($('jLb'), lb.map((s,i)=>lbRow(s,'',s[0].toLowerCase()===me.name.toLowerCase()?'me':'',i)).join(''));
 }
 function renderPlayer(){
@@ -1007,7 +1158,7 @@ function sendCmd(a, x){
 }
 function renderCtl(h){
   const el=$('jCtl');
-  if (!isCtl()){ if (me.ctlHTML){ el.innerHTML=''; me.ctlHTML=''; } el.classList.add('hidden'); return; }
+  if (!isCtl()){ if (me.ctlHTML){ el.innerHTML=''; me.ctlHTML=''; } el.classList.add('hidden'); $('jManage').classList.add('hidden'); return; }
   const ph=h.phase, m=h.mg, B=(a,label,cls='go',x)=>`<button type="button" class="${cls}" data-cmd="${a}"${x!==undefined?` data-x="${x}"`:''}>${label}</button>`;
   let b='';
   if (ph==='lobby') b=`<label class="f ctldur">Ranking timer<select id="jDur">${[[0,'No timer'],[45,'45 s'],[60,'60 s'],[90,'90 s'],[120,'2 min']].map(([v,l])=>`<option value="${v}"${v===me.ctlDur?' selected':''}>${l}</option>`).join('')}</select></label>`+B('start','Start game');
@@ -1018,12 +1169,15 @@ function renderCtl(h){
   else if (ph==='half') b=B('spin','Spin the wheel');
   else if (ph==='mg' && m && m.st==='done' && h.nx) b=B('next',`Next: ${esc(h.nx)}`);
   if (ph!=='lobby' && ph!=='final') b+=B('end', me.endArm>now()?'Tap again to end':'End game', 'ghost danger');
+  if (Array.isArray(h.pl)) b+=`<button type="button" class="ghost" data-mtoggle="1" aria-expanded="${me.mOpen}">👥 Players</button>`;
   const html=`<div class="ctlhead"><span class="ctlbadge">🎮 Host</span><span>You're running the game</span></div><div class="ctlbtns">${b}</div>`;
   if (html!==me.ctlHTML){ el.innerHTML=html; me.ctlHTML=html; }
   el.classList.remove('hidden');
+  drawPhoneManage();
 }
 $('jCtl').addEventListener('change',e=>{ if (e.target.id==='jDur') me.ctlDur=+e.target.value; });
 $('jCtl').addEventListener('click',e=>{
+  if (e.target.closest('[data-mtoggle]')){ me.mOpen=!me.mOpen; me.ctlHTML=''; renderCtl(me.host); return; }
   const b=e.target.closest('[data-cmd]'); if (!b || !me || !isCtl()) return;
   const a=b.dataset.cmd;
   if (a==='end' && !(me.endArm>now())){ me.endArm=now()+3000; renderCtl(me.host); setTimeout(()=>{ if(me&&me.host) renderCtl(me.host); },3100); return; }
@@ -1048,3 +1202,19 @@ $('jX').addEventListener('click',e=>{
   const ac=t.closest('[data-prva]'); if (ac){ ac.disabled=true; return sendCmd('rva', +ac.dataset.prva); }
   const ok=t.closest('[data-prvok]'); if (ok){ ok.disabled=true; ok.textContent='Sent…'; return sendCmd('rvok'); }
 });
+
+function drawPhoneManage(force){
+  const el=$('jManage'), h=me&&me.host;
+  const show=!!(h && isCtl() && me.mOpen && Array.isArray(h.pl));
+  el.classList.toggle('hidden', !show); if (!show) return;
+  const list=$('jManageList');
+  if (!force && list.contains(document.activeElement) && document.activeElement.tagName==='INPUT') return;
+  setH(list, manageHTML(h.pl, me.mState.edit, me.mState.arm, me.name.toLowerCase()));
+}
+bindManage($('jManageList'), {get state(){ return me?me.mState:{}; }, rename:(p,n)=>sendCmd('ren',{p,n}), kick:p=>sendCmd('kick',p), redraw:f=>drawPhoneManage(f)});
+function kicked(){
+  store('pyr-last','');
+  const code=me.code; leaveOnline();
+  $('jPlay').classList.add('hidden'); $('jForm').classList.remove('hidden'); $('jCode').value=code;
+  $('jNotice').textContent='The host removed you from this game. You can rejoin with a different name if they say so.'; $('jNotice').classList.remove('hidden');
+}
