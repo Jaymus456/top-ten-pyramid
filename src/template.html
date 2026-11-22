@@ -226,7 +226,7 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
           <p class="sub" id="hNoPlayers">Waiting for players to join…</p>
         </div>
         <div class="panel hidden" id="hLbPanel"><h3 id="hLbTitle">Leaderboard</h3><ol class="board-lb" id="hLb"></ol></div>
-        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. Before each round everyone votes for a category; a tie goes to a blackjack showdown. Rank the pyramid for a point per correct stone. At half-time the wheel picks a mini-game worth 5 points.</p></div>
+        <div class="panel" id="hHow"><h3>How a game works</h3><p class="sub" style="margin:6px 0 0">6 rounds. At the start everyone votes for a theme to play all game; a tie goes to a blackjack showdown. Each round, rank a fresh pyramid for a point per correct stone. At half-time the wheel picks a mini-game worth 5 points.</p></div>
       </div>
     </div>
     <div id="hStage" class="hidden">
@@ -284,6 +284,8 @@ body.tv .timer{font-variant-numeric:tabular-nums;font-size:56px}
 <script>
 {
 /*DATA*/
+/*DATAX*/
+/*DATAXB*/
 /*AVATARS*/
 const ART_URL = 'https://claude.ai/artifact/VBgkotb1UX47rB9Yz9ZrPe';
 const CATS = GROUPS.flatMap(g=>g.cats.map(c=>Object.assign(c,{group:g.id})));

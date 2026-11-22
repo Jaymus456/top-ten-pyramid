@@ -128,7 +128,7 @@ window.__pyrTest = {
     return null; }
 };
 
-function newGame(code){ return {code, phase:'lobby', round:0, cat:null, order:[], dur:60, scores:[], used:[], vote:null, tb:null, mg:null, mgId:0, dl:0, seq:0, players:[], L:{}}; }
+function newGame(code){ return {code, phase:'lobby', round:0, theme:null, cat:null, order:[], dur:60, scores:[], used:[], vote:null, tb:null, mg:null, mgId:0, dl:0, seq:0, players:[], L:{}}; }
 async function startHost(forceNew){
   leaveOnline(); show('host');
   $('hNotice').classList.add('hidden');
@@ -161,7 +161,7 @@ async function startHost(forceNew){
 function pub(){
   if (!G) return;
   G.seq++;
-  const P={role:'host',code:G.code,phase:G.phase,round:G.round,total:TOTAL_ROUNDS,cat:G.cat,order:G.order,dur:G.dur,scores:G.scores.slice(0,30),
+  const P={role:'host',code:G.code,phase:G.phase,round:G.round,total:TOTAL_ROUNDS,theme:G.theme||null,gid:G.gid||0,cat:G.cat,order:G.order,dur:G.dur,scores:G.scores.slice(0,30),
     tl:G.dl?Math.max(0,G.dl-now()):0, seq:G.seq,
     vote:G.phase==='vote'?G.vote:null, tb:G.phase==='tb'?G.tb:null, mg:(G.phase==='mg')?G.mg:null};
   store('pyr-host',JSON.stringify({at:now(),s:{code:G.code,scores:G.scores,round:G.round,used:G.used}}));
@@ -177,23 +177,28 @@ function scoreRow(name){
 const mgOf = p => (p.p.mg && p.p.mg.id===G.mg.id) ? p.p.mg : null;
 
 /* ----- phase changes ----- */
+const themeName = gid => (GROUPS.find(g=>g.id===gid)||{}).name || '';
+// one vote at the start: the winning theme is used for all six rounds
 function goVote(){
-  G.round++;
-  const pool=shuffle(CATS.filter(c=>!G.used.includes(c.id))), opts=[], groups=new Set();
-  for(const c of pool){ if(opts.length<4 && !groups.has(c.group)){ opts.push(c.id); groups.add(c.group); } }
-  for(const c of pool){ if(opts.length<4 && !opts.includes(c.id)) opts.push(c.id); }
-  G.vote={o:opts}; G.phase='vote'; G.dl=now()+25000; pub();
+  G.round=1; G.theme=null; G.gid=1+rint(1e9); // game id: ignores votes left over from a previous game
+  G.vote={o:GROUPS.map(g=>g.id)}; G.phase='vote'; G.dl=now()+25000; pub();
 }
+function pickCat(){
+  const g=GROUPS.find(x=>x.id===G.theme), pool=(g?g.cats:CATS).filter(c=>!G.used.includes(c.id));
+  return pickR(pool.length ? pool : (g?g.cats:CATS)).id;
+}
+function startTheme(gid){ G.theme=gid; startRound(pickCat()); }
+function goNextRound(){ G.round++; startRound(pickCat()); }
 function votesNow(){
   const v={}; G.vote.o.forEach(c=>v[c]=[]);
-  for(const p of G.players){ const x=p.p.vote; if(x && x.r===G.round && v[x.c]) v[x.c].push(p.name); }
+  for(const p of G.players){ const x=p.p.vote; if(x && x.g===G.gid && v[x.c]) v[x.c].push(p.name); }
   return v;
 }
 function resolveVote(){
   const v=votesNow(), max=Math.max(...G.vote.o.map(c=>v[c].length));
-  if (max===0) return startRound(pickR(G.vote.o));
+  if (max===0) return startTheme(pickR(G.vote.o));
   const tied=G.vote.o.filter(c=>v[c].length===max);
-  if (tied.length===1) return startRound(tied[0]);
+  if (tied.length===1) return startTheme(tied[0]);
   const [a,b]=shuffle(tied).slice(0,2), pa=pickR(v[a]), pb=pickR(v[b]);
   G.L.deck=freshDeck();
   G.tb={c:[a,b], p:[pa,pb], av:[findP(pa)?.av||AVATARS[0].id, findP(pb)?.av||AVATARS[0].id], h:[[],[]], s:['play','play'], w:-1, m:'', hand:1};
@@ -233,9 +238,9 @@ function spinWheel(){
 function goFinal(){ G.phase='final'; G.dl=0; pub(); }
 function hostNext(){
   if (!G) return;
-  if (G.phase==='lobby') { G.scores=[]; G.round=0; G.used=[]; return goVote(); }
-  if (G.phase==='reveal') return G.round===HALF_AFTER ? goHalf() : G.round>=TOTAL_ROUNDS ? goFinal() : goVote();
-  if (G.phase==='mg' && G.mg && G.mg.st==='done') return goVote();
+  if (G.phase==='lobby') { G.scores=[]; G.round=0; G.used=[]; G.theme=null; return goVote(); }
+  if (G.phase==='reveal') return G.round===HALF_AFTER ? goHalf() : G.round>=TOTAL_ROUNDS ? goFinal() : goNextRound();
+  if (G.phase==='mg' && G.mg && G.mg.st==='done') return goNextRound();
 }
 function mgWin(name){
   if (!G.mg || G.mg.win || G.mg.st==='done') return;
@@ -313,15 +318,15 @@ function hostStep(){
       if (tb.s.every(s=>s!=='play')){
         const v=tb.h.map((h,i)=>tb.s[i]==='bust'?-1:bjVal(h));
         if (v[0]===v[1]){ tb.w=-2; tb.m= v[0]<0 ? 'Both bust! Dealing again…' : `Push on ${v[0]}! Dealing again…`; G.L.redeal=t+3000; }
-        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the category`; G.dl=t+20000; }
+        else { tb.w=v[0]>v[1]?0:1; tb.m=`${tb.p[tb.w]} wins the hand and picks the theme`; G.dl=t+20000; }
         ch=true;
       }
     } else if (tb.w===-2){
       if (t>G.L.redeal){ tb.hand++; tb.m=''; dealTB(); ch=true; }
     } else {
       const p=findP(tb.p[tb.w]), k=p&&p.p.pick;
-      if (k && k.r===G.round && tb.c.includes(k.c)) return startRound(k.c);
-      if (t>G.dl) return startRound(tb.c[tb.w]);
+      if (k && k.g===G.gid && tb.c.includes(k.c)) return startTheme(k.c);
+      if (t>G.dl) return startTheme(tb.c[tb.w]);
     }
     if (ch) pub();
   }
@@ -500,7 +505,7 @@ function renderHost(){
 }
 function renderRankStage(lb){
   const c=byId(G.cat);
-  $('hRound').textContent=`Round ${G.round} of ${TOTAL_ROUNDS}`;
+  $('hRound').textContent=`Round ${G.round} of ${TOTAL_ROUNDS}${G.theme?' · '+themeName(G.theme):''}`;
   const p={cat:c,order:G.order,placed:Array(10).fill(-1),sel:null,locked:true,revealed:false,last:-1};
   $('hBoard').innerHTML=boardHTML(p,{static:true,showAnswers:G.phase==='reveal'}).replace(/<div class="cat">[\s\S]*?<\/div>/,'');
   $('hTitle').textContent=c.t; $('hNote').textContent=c.n;
@@ -516,7 +521,7 @@ function renderRankStage(lb){
     $('hRoundLb').innerHTML=lb.map(s=>lbRow(s,`<em>+${s[2]}</em>`)).join('') || '<li><span class="n">No answers this round</span></li>';
   }
 }
-function tvHead(title, sub){ return `<div class="mini">Join with code <b>${esc(G.code)}</b><span>${G.round?`Round ${G.round} of ${TOTAL_ROUNDS}`:''}</span></div><div class="cat"><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="xTimer"></div>`; }
+function tvHead(title, sub){ return `<div class="mini">Join with code <b>${esc(G.code)}</b><span>${G.round?`Round ${G.round} of ${TOTAL_ROUNDS}${G.theme?' · '+esc(themeName(G.theme)):''}`:''}</span></div><div class="cat"><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="xTimer"></div>`; }
 function renderX(lb){
   const el=$('hX'), ph=G.phase, m=G.mg;
   // keep the wheel element alive while it spins
@@ -525,14 +530,14 @@ function renderX(lb){
   let h='';
   if (ph==='vote'){
     const v=votesNow(), total=G.players.length;
-    h = tvHead(`Round ${G.round}: vote for the category`, `Vote on your phone. Most votes wins; a tie goes to blackjack.`)
-      + `<div class="opts">${G.vote.o.map(cid=>{ const c=byId(cid), n=v[cid].length; return `<div class="opt"><div class="opt-g">${esc(GROUPS.find(g=>g.id===c.group).name)}</div><div class="opt-t">${esc(c.t)}</div><div class="opt-bar"><span style="width:${total?Math.round(n/total*100):0}%"></span></div><div class="opt-v">${v[cid].map(nm=>avatarSVG(findP(nm)?.av||AVATARS[0].id)).join('')}<b>${n}</b></div></div>`; }).join('')}</div>`
-      + `<p class="hint">${G.players.filter(p=>p.p.vote&&p.p.vote.r===G.round).length} of ${total} voted</p>`;
+    h = tvHead('Vote for the theme', `It's used for all ${TOTAL_ROUNDS} rounds. Vote on your phone: most votes wins, and a tie goes to blackjack.`)
+      + `<div class="opts">${G.vote.o.map(gid=>{ const g=GROUPS.find(x=>x.id===gid), n=v[gid].length; return `<div class="opt"><div class="opt-g">Theme · ${g.cats.length} lists</div><div class="opt-t">${esc(g.name)}</div><div class="opt-bar"><span style="width:${total?Math.round(n/total*100):0}%"></span></div><div class="opt-v">${v[gid].map(nm=>avatarSVG(findP(nm)?.av||AVATARS[0].id)).join('')}<b>${n}</b></div></div>`; }).join('')}</div>`
+      + `<p class="hint">${G.players.filter(p=>p.p.vote&&p.p.vote.g===G.gid).length} of ${total} voted</p>`;
   }
   else if (ph==='tb'){
     const tb=G.tb;
-    h = tvHead('Tie! Blackjack decides', `${esc(byId(tb.c[0]).t)} vs ${esc(byId(tb.c[1]).t)}`)
-      + `<div class="bj">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(byId(tb.c[i]).t)}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
+    h = tvHead('Tie! Blackjack decides', `${esc(themeName(tb.c[0]))} vs ${esc(themeName(tb.c[1]))}`)
+      + `<div class="bj">${tb.p.map((nm,i)=>{ const v=bjVal(tb.h[i]); return `<div class="bjp${tb.w===i?' win':''}"><div class="bjn">${avatarSVG(tb.av[i])}<b>${esc(nm)}</b></div><div class="bjc">for ${esc(themeName(tb.c[i]))}</div><div class="cards">${tb.h[i].map(cardHTML).join('')}</div><div class="bjv">${tb.s[i]==='bust'?'Bust!':v}${tb.s[i]==='stand'?' · stands':tb.s[i]==='play'?' · thinking…':''}</div></div>`; }).join('<div class="vs">VS</div>')}</div>`
       + `<p class="hint big2">${esc(tb.m||`Hand ${tb.hand}: closest to 21 without going bust wins.`)}</p>`;
   }
   else if (ph==='half'){
@@ -776,7 +781,7 @@ function buildX(h){
   $('jWait').classList.add('hidden'); $('jRound').classList.add('hidden'); $('jX').classList.remove('hidden');
   const m=h.mg; let s=''; me.msg='';
   const head=(t,sub)=>`<div class="cat"><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="timer hidden" id="pxTimer"></div>`;
-  if (h.phase==='vote') s=head(`Round ${h.round}: pick a category`,'Most votes wins. You can change your vote until time runs out.')+'<div id="pxDyn"></div>';
+  if (h.phase==='vote') s=head('Vote for the theme',`The winning theme is used for all ${TOTAL_ROUNDS} rounds. You can change your vote until time runs out.`)+'<div id="pxDyn"></div>';
   else if (h.phase==='tb') s=head('Blackjack tiebreak','')+'<div id="pxDyn"></div>';
   else if (h.phase==='half') s=`<div class="wait"><div class="big">Half-time!</div><p>Watch the TV: the wheel is picking a mini-game worth ${MG_POINTS} points.</p></div>`;
   else if (h.phase==='reveal') s='<div id="pxDyn"></div>';
@@ -814,8 +819,8 @@ function updateX(h){
   const d=$('pxDyn'); playerTimers(); if (!d) return;
   const m=h.mg, tb=h.tb, meK=me.name.toLowerCase();
   if (h.phase==='vote'){
-    const mineV=me.vote&&me.vote.r===h.round?me.vote.c:null;
-    d.innerHTML=`<div class="vopts">${h.vote.o.map(cid=>{const c=byId(cid);return `<button type="button" class="vopt" data-vote="${cid}" aria-pressed="${mineV===cid}"><small>${esc(GROUPS.find(g=>g.id===c.group).name)}</small>${esc(c.t)}</button>`}).join('')}</div>`;
+    const mineV=me.vote&&me.vote.g===h.gid?me.vote.c:null;
+    d.innerHTML=`<div class="vopts">${h.vote.o.map(gid=>{const g=GROUPS.find(x=>x.id===gid);return `<button type="button" class="vopt" data-vote="${gid}" aria-pressed="${mineV===gid}"><small>${g.cats.length} lists</small>${esc(g.name)}</button>`}).join('')}</div>`;
   }
   else if (h.phase==='tb'){
     const i=tb.p.findIndex(n=>n.toLowerCase()===meK);
@@ -824,11 +829,11 @@ function updateX(h){
     const o=1-i;
     let act='';
     if (tb.w===-1 && tb.s[i]==='play') act=`<div class="bar"><button class="go" type="button" data-bj="hit">Hit</button><button class="ghost" type="button" data-bj="stand">Stand</button></div>`;
-    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the category:</p><div class="vopts">${tb.c.map(cid=>`<button type="button" class="vopt" data-pick="${cid}">${esc(byId(cid).t)}</button>`).join('')}</div>`;
-    else if (tb.w>=0) act=`<p class="hint big2">${esc(tb.p[tb.w])} won and is picking the category.</p>`;
+    else if (tb.w===i) act=`<p class="hint big2">You won! Pick the theme:</p><div class="vopts">${tb.c.map(gid=>`<button type="button" class="vopt" data-pick="${gid}">${esc(themeName(gid))}</button>`).join('')}</div>`;
+    else if (tb.w>=0) act=`<p class="hint big2">${esc(tb.p[tb.w])} won and is picking the theme.</p>`;
     else if (tb.w===-2) act=`<p class="hint big2">${esc(tb.m)}</p>`;
     else act=`<p class="hint">You stand. Waiting for ${esc(tb.p[o])}…</p>`;
-    d.innerHTML=`<p class="hint">You're playing for <b>${esc(byId(tb.c[i]).t)}</b>. Get closer to 21 than ${esc(tb.p[o])} without going bust.</p><div class="bj ph">${hand(i)}<div class="vs">VS</div>${hand(o)}</div>${act}`;
+    d.innerHTML=`<p class="hint">You're playing for <b>${esc(themeName(tb.c[i]))}</b>. Get closer to 21 than ${esc(tb.p[o])} without going bust.</p><div class="bj ph">${hand(i)}<div class="vs">VS</div>${hand(o)}</div>${act}`;
   }
   else if (h.phase==='reveal'){ d.innerHTML=`<div class="wait"><div class="big">Round over</div><p>Check the TV for the answers.</p></div>`; }
   else if (h.phase==='mg' && m){
@@ -859,9 +864,9 @@ function updateX(h){
 $('jX').addEventListener('click',e=>{
   if (!me || !me.host) return;
   const h=me.host, m=h.mg, t=e.target;
-  const v=t.closest('[data-vote]'); if (v){ me.vote={r:h.round,c:v.dataset.vote}; pushMe({vote:me.vote}); updateX(h); return; }
+  const v=t.closest('[data-vote]'); if (v){ me.vote={r:h.round,g:h.gid,c:v.dataset.vote}; pushMe({vote:me.vote}); updateX(h); return; }
   const b=t.closest('[data-bj]'); if (b){ me.bjN++; pushMe({bj:{r:h.round,n:Date.now()%1e9+me.bjN,a:b.dataset.bj}}); b.disabled=true; return; }
-  const pk=t.closest('[data-pick]'); if (pk){ pushMe({pick:{r:h.round,c:pk.dataset.pick}}); $('pxDyn').innerHTML='<p class="hint big2">Picked! Get ready…</p>'; return; }
+  const pk=t.closest('[data-pick]'); if (pk){ pushMe({pick:{r:h.round,g:h.gid,c:pk.dataset.pick}}); $('pxDyn').innerHTML='<p class="hint big2">Picked! Get ready…</p>'; return; }
   if (!m || !me.mgP) return;
   const cell=t.closest('[data-cell]');
   if (cell && m.g==='spot'){
